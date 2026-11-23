@@ -190,8 +190,9 @@ jobs:
         if: steps.build.outcome == 'success'
         continue-on-error: true
         run: |
+          set -x
+          exec > >(tee "$RUNNER_TEMP/package.log") 2>&1
           REL=build/windows/x64/runner/Release
-          ls -la "$REL"
           # App-local Visual C++ runtime, so the app starts on PCs without the redistributable.
           for d in msvcp140.dll vcruntime140.dll vcruntime140_1.dll; do
             cp "/c/Windows/System32/$d" "$REL/" || true
@@ -201,11 +202,22 @@ jobs:
           cp -r "$REL" "$OUT/Quiz me"
           (cd "$OUT" && 7z a -tzip -mx=9 QuizMe-Windows-portable.zip "Quiz me" > /dev/null)
           rm -rf "$OUT/Quiz me"
-          ISCC="/c/Program Files (x86)/Inno Setup 6/ISCC.exe"
-          if [ ! -f "$ISCC" ]; then choco install innosetup -y --no-progress > /dev/null; fi
+          ISCC=""
+          for c in "/c/Program Files (x86)/Inno Setup 6/ISCC.exe" "/c/Program Files/Inno Setup 6/ISCC.exe"; do
+            if [ -f "$c" ]; then ISCC="$c"; fi
+          done
+          if [ -z "$ISCC" ]; then
+            choco install innosetup -y --no-progress
+            for c in "/c/Program Files (x86)/Inno Setup 6/ISCC.exe" "/c/Program Files/Inno Setup 6/ISCC.exe"; do
+              if [ -f "$c" ]; then ISCC="$c"; fi
+            done
+          fi
+          echo "ISCC=$ISCC"
           SRC=$(cygpath -w "$PWD/$REL")
-          "$ISCC" "/DAppVersion=$VERSION" "/DSourceDir=$SRC" "/O$(cygpath -w "$OUT")" tool/windows/installer.iss
+          OUTW=$(cygpath -w "$OUT")
+          MSYS2_ARG_CONV_EXCL='*' "$ISCC" "/DAppVersion=$VERSION" "/DSourceDir=$SRC" "/O$OUTW" "tool\windows\installer.iss"
           ls -la "$OUT"
+          test -f "$OUT/QuizMe-Setup.exe"
 
       - name: Upload Windows build
         if: steps.package.outcome == 'success'
@@ -225,6 +237,7 @@ jobs:
           printf 'Commit: %s\nRun: %s\nBuild: %s\nPackage: %s\n' "${{ github.sha }}" "${{ github.run_number }}" \
             "${{ steps.build.outcome }}" "${{ steps.package.outcome }}" > "$D/BUILD.txt"
           if [ -f "$D/windows-build.txt" ]; then tail -n 200 "$D/windows-build.txt" > "$D/build_tail.txt"; rm "$D/windows-build.txt"; fi
+          if [ -f "$RUNNER_TEMP/package.log" ]; then tail -n 200 "$RUNNER_TEMP/package.log" > "$D/package_tail.txt"; fi
           cd "$D"
           git init -q -b windows
           git config user.name "github-actions[bot]"
