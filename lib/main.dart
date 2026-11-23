@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'app/app.dart';
 import 'app/services.dart';
 
+// ignore: unused_element
+AppLifecycleListener? _lifecycle;
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
@@ -13,8 +16,19 @@ Future<void> main() async {
     return;
   }
   runApp(const QuizMeApp());
-  // Plan reminders after the first frame; never blocks start-up.
+  // Sync with Google Drive when the app comes back to the foreground, and
+  // push pending changes when it goes to the background.
+  _lifecycle = AppLifecycleListener(
+    onResume: () => AppServices.I.sync?.appResumed(),
+    onPause: () => AppServices.I.sync?.appPaused(),
+  );
+  // Plan reminders and start sync after the first frame; never blocks start-up.
   WidgetsBinding.instance.addPostFrameCallback((_) async {
+    try {
+      await AppServices.I.sync?.init();
+    } catch (e) {
+      debugPrint('Sync start failed: $e');
+    }
     await AppServices.I.notifications.init();
     await AppServices.I.refreshReminders();
   });

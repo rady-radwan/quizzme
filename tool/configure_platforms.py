@@ -37,6 +37,11 @@ def patch_manifest():
         perms = ('    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>\n'
                  '    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>\n')
         s = re.sub(r'\n(\s*)<application', lambda m: '\n' + perms + m.group(1) + '<application', s, count=1)
+    if 'android.permission.INTERNET' not in s:
+        # Release builds need it explicitly (Google Drive sync).
+        s = re.sub(r'\n(\s*)<application',
+                   lambda m: '\n    <uses-permission android:name="android.permission.INTERNET"/>\n' + m.group(1) + '<application',
+                   s, count=1)
     if 'ScheduledNotificationReceiver' not in s:
         receivers = '''
         <!-- quiz-me-config: flutter_local_notifications -->

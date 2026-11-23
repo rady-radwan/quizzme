@@ -78,11 +78,39 @@ jobs:
         continue-on-error: true
         run: flutter test --reporter expanded 2>&1 | tee "$RUNNER_TEMP/reports/test.txt"
 
+      - name: Release signing key (optional repository secrets)
+        # With the secrets set, every APK is signed with the same permanent key,
+        # so new versions install over old ones and Google sign-in works.
+        id: signing
+        if: steps.pub.outcome == 'success'
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > android/app/upload-keystore.jks
+            printf 'storePassword=%s\nkeyPassword=%s\nkeyAlias=%s\nstoreFile=upload-keystore.jks\n' \
+              "$KEYSTORE_PASSWORD" "$KEY_PASSWORD" "$KEY_ALIAS" > android/key.properties
+            echo "key=release" >> "$GITHUB_OUTPUT"
+          else
+            echo "key=debug" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Build APK
         id: apk
         if: steps.pub.outcome == 'success'
         continue-on-error: true
-        run: flutter build apk --release 2>&1 | tee "$RUNNER_TEMP/reports/build.txt"
+        env:
+          GOOGLE_WEB_CLIENT_ID: ${{ secrets.QUIZME_GOOGLE_WEB_CLIENT_ID }}
+        run: |
+          flutter build apk --release --dart-define=QUIZME_GOOGLE_WEB_CLIENT_ID="$GOOGLE_WEB_CLIENT_ID" \
+            2>&1 | tee "$RUNNER_TEMP/reports/build.txt"
+
+      - name: Remove signing files
+        if: always()
+        run: rm -f android/app/upload-keystore.jks android/key.properties
 
       - name: Upload APK
         if: steps.apk.outcome == 'success'
@@ -131,7 +159,7 @@ jobs:
             echo "- pub get: ${{ steps.pub.outcome }}"
             echo "- analyze: ${{ steps.analyze.outcome }}"
             echo "- test: ${{ steps.test.outcome }}"
-            echo "- apk: ${{ steps.apk.outcome }}"
+            echo "- apk: ${{ steps.apk.outcome }} (signing key: ${{ steps.signing.outputs.key }})"
             echo "- Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           } > "$R/summary.md"
           if [ -f "$R/analyze.txt" ]; then grep -E "^\s*(error|warning) •" "$R/analyze.txt" > "$R/analyze_problems.txt" || true; fi
@@ -181,9 +209,15 @@ jobs:
       - name: Build
         id: build
         continue-on-error: true
+        env:
+          GOOGLE_DESKTOP_CLIENT_ID: ${{ secrets.QUIZME_GOOGLE_DESKTOP_CLIENT_ID }}
+          GOOGLE_DESKTOP_CLIENT_SECRET: ${{ secrets.QUIZME_GOOGLE_DESKTOP_CLIENT_SECRET }}
         run: |
           flutter pub get
-          flutter build windows --release 2>&1 | tee "$RUNNER_TEMP/out/windows-build.txt"
+          flutter build windows --release \
+            --dart-define=QUIZME_GOOGLE_DESKTOP_CLIENT_ID="$GOOGLE_DESKTOP_CLIENT_ID" \
+            --dart-define=QUIZME_GOOGLE_DESKTOP_CLIENT_SECRET="$GOOGLE_DESKTOP_CLIENT_SECRET" \
+            2>&1 | tee "$RUNNER_TEMP/out/windows-build.txt"
 
       - name: Package (portable zip + installer)
         id: package

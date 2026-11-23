@@ -11,6 +11,7 @@ import '../common/file_io.dart';
 import '../common/widgets.dart';
 import '../import/import_screen.dart';
 import 'backup_screen.dart';
+import 'sync_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -416,6 +417,14 @@ class SettingsScreen extends StatelessWidget {
                 if (context.mounted) showErrorDialog(context, 'Export failed', '$e');
               }
             },
+          ),
+          ListTile(
+            leading: const Icon(Icons.sync),
+            title: const Text('Sync between devices'),
+            subtitle: Text(svc.sync?.enabled == true
+                ? 'On — Google Drive${svc.sync?.email == null ? '' : ' (${svc.sync!.email})'}'
+                : 'Keep phone and PC up to date through Google Drive'),
+            onTap: () => Navigator.push(context, MaterialPageRoute<void>(builder: (_) => const SyncScreen())),
           ),
           ListTile(
             leading: const Icon(Icons.backup_outlined),

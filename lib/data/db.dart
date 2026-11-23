@@ -7,7 +7,7 @@ import 'package:sqflite_common/sqlite_api.dart';
 /// sqflite runs the migrations between the stored `user_version` and
 /// [schemaVersion] inside one transaction.
 class AppDatabase {
-  static const int schemaVersion = 1;
+  static const int schemaVersion = 2;
   static const String fileName = 'quiz_me.db';
 
   static Future<Database> open(DatabaseFactory factory, String path) {
@@ -54,7 +54,7 @@ class AppDatabase {
     'settings',
   ];
 
-  static const Map<int, List<String>> migrations = {
+  static final Map<int, List<String>> migrations = {
     1: [
       '''
 CREATE TABLE categories (
@@ -267,7 +267,70 @@ CREATE TABLE settings (
   value TEXT
 )''',
     ],
+    2: _syncMigration(),
   };
+
+  /// Tables synchronised between devices (Google Drive sync) and the
+  /// columns forming their key. `settings` stays per device (theme, font…).
+  static const Map<String, List<String>> syncKeys = {
+    'categories': ['id'],
+    'banks': ['id'],
+    'imports': ['id'],
+    'questions': ['id'],
+    'options': ['id'],
+    'progress': ['question_id'],
+    'sessions': ['id'],
+    'session_questions': ['session_id', 'position'],
+    'attempts': ['id'],
+    'presentations': ['id'],
+    'bookmarks': ['question_id'],
+    'notes': ['id'],
+    'goals': ['id'],
+    'achievements': ['id'],
+  };
+
+  /// Synchronised tables in dependency order (parents first).
+  static List<String> get syncTables => [for (final t in tables) if (syncKeys.containsKey(t)) t];
+
+  /// Migration 2: change tracking for sync. Triggers record, for every row
+  /// of a synchronised table, when it was last written or deleted
+  /// (`sync_meta`). While remote changes are being applied
+  /// (`sync_control.applying = 1`) the triggers stay silent.
+  static List<String> _syncMigration() {
+    const now = "CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER)";
+    const guard = 'WHEN (SELECT applying FROM sync_control WHERE id = 1) = 0';
+    final out = <String>[
+      '''
+CREATE TABLE sync_meta (
+  tbl TEXT NOT NULL,
+  pk TEXT NOT NULL,
+  modified_at INTEGER NOT NULL,
+  deleted INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (tbl, pk)
+)''',
+      'CREATE TABLE sync_control (id INTEGER PRIMARY KEY CHECK (id = 1), applying INTEGER NOT NULL DEFAULT 0)',
+      'INSERT INTO sync_control (id, applying) VALUES (1, 0)',
+    ];
+    for (final e in syncKeys.entries) {
+      final t = e.key;
+      String key(String alias) => e.value.map((c) => '$alias.$c').join(" || '|' || ");
+      // Existing rows count as "very old" so any real change wins over them.
+      out.add("INSERT INTO sync_meta (tbl, pk, modified_at, deleted) SELECT '$t', ${key(t)}, 1, 0 FROM $t");
+      // DELETE + INSERT (not INSERT OR REPLACE): an outer INSERT OR IGNORE
+      // would otherwise turn the inner statement into OR IGNORE.
+      String mark(String alias, String deleted) => '''
+  DELETE FROM sync_meta WHERE tbl = '$t' AND pk = ${key(alias)};
+  INSERT INTO sync_meta (tbl, pk, modified_at, deleted) VALUES ('$t', ${key(alias)}, $now, $deleted);''';
+      out.add('CREATE TRIGGER sync_${t}_ins AFTER INSERT ON $t $guard BEGIN${mark('NEW', '0')}\nEND');
+      out.add('''CREATE TRIGGER sync_${t}_upd AFTER UPDATE ON $t $guard BEGIN
+  DELETE FROM sync_meta WHERE tbl = '$t' AND pk = ${key('OLD')} AND ${key('OLD')} <> ${key('NEW')};
+  INSERT INTO sync_meta (tbl, pk, modified_at, deleted)
+    SELECT '$t', ${key('OLD')}, $now, 1 WHERE ${key('OLD')} <> ${key('NEW')};${mark('NEW', '0')}
+END''');
+      out.add('CREATE TRIGGER sync_${t}_del AFTER DELETE ON $t $guard BEGIN${mark('OLD', '1')}\nEND');
+    }
+    return out;
+  }
 }
 
 final RegExp _safeId = RegExp(r'^[A-Za-z0-9_-]{1,64}$');

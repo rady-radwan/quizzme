@@ -20,6 +20,9 @@ import '../data/stats_repository.dart';
 import '../data/study_repository.dart';
 import '../services/notification_service.dart';
 import '../services/speech_service.dart';
+import '../sync/google_auth.dart';
+import '../sync/sync_service.dart';
+import '../sync/sync_store.dart';
 
 const String appVersion = '1.0.0';
 
@@ -83,7 +86,13 @@ class AppServices {
   /// Incremented whenever questions, banks or progress change, so open
   /// screens can refresh their numbers.
   final ValueNotifier<int> dataVersion = ValueNotifier<int>(0);
-  void dataChanged() => dataVersion.value++;
+  void dataChanged() {
+    dataVersion.value++;
+    sync?.dataChanged();
+  }
+
+  /// Google Drive sync between devices (null in tests).
+  SyncService? sync;
 
   static DatabaseFactory platformDatabaseFactory() {
     if (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
@@ -98,6 +107,13 @@ class AppServices {
     final db = await AppDatabase.open(
         platformDatabaseFactory(), p.join(dir.path, AppDatabase.fileName));
     final s = await forDatabase(db, mediaDir: Directory(p.join(dir.path, 'media')));
+    s.sync = SyncService(
+      store: SyncStore(db),
+      settings: s.settingsRepo,
+      media: s.media,
+      auth: GoogleAuth.forPlatform(dir),
+      onDataChanged: s.dataChanged,
+    );
     await s.imports.markInterruptedImports();
     // Retention decay and achievements are best-effort background chores.
     s.study.refreshDecay().catchError((Object e) {
