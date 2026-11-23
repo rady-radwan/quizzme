@@ -1,0 +1,44 @@
+name: quiz_me
+description: "Quiz me — a personal learning, quiz, and long-term knowledge retention app."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.6.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # Local database (SQLite). sqflite on Android/iOS, sqflite_common_ffi on
+  # Windows/Linux/macOS and in tests. No code generation required.
+  sqflite: ^2.4.1
+  sqflite_common: ^2.5.4
+  sqflite_common_ffi: ^2.3.4
+  path: ^1.9.0
+  path_provider: ^2.1.4
+
+  # Files, Excel (.xlsx is a zip of XML parts), backups.
+  file_picker: ">=8.1.0 <12.0.0"
+  archive: ^3.6.1
+  xml: ^6.5.0
+  intl: any
+
+  # Optional device features.
+  flutter_local_notifications: ^19.4.0
+  timezone: ^0.10.0
+  flutter_tts: ^4.2.0
+  audioplayers: ^6.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/templates/
