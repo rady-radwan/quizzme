@@ -39,7 +39,6 @@ class ImportHistoryScreen extends StatelessWidget {
                   title: Text(r.fileName),
                   subtitle: Text('${fmt.format(r.importedAt)} · ${r.status}\n'
                       '${r.imported} imported · ${r.updated} updated · ${r.skipped} skipped · ${r.errors} errors'),
-                  isThreeLine: true,
                   childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
                   children: [
                     if (!failed)

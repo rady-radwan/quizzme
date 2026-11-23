@@ -500,7 +500,7 @@ class _QuizPlayerScreenState extends State<QuizPlayerScreen> with WidgetsBinding
                                 ],
                                 if (revealed) ...[
                                   const SizedBox(height: 12),
-                                  FeedbackPanel(question: q, response: response, result: result!),
+                                  FeedbackPanel(question: q, response: response, result: result),
                                 ],
                                 if ((revealed && _cfg.confidenceRatings && !_applied.contains(pos)) ||
                                     (!_immediate && _cfg.confidenceRatings && !_cfg.isExam && isAnswered(q, response))) ...[

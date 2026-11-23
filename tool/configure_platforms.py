@@ -60,10 +60,10 @@ def patch_manifest():
 
 
 SIGNING_KTS_TOP = '''// quiz-me-config: optional release signing (android/key.properties is never committed)
-val keystoreProperties = java.util.Properties()
+val keystoreProperties = Properties()
 val keystorePropertiesFile = rootProject.file("key.properties")
 if (keystorePropertiesFile.exists()) {
-    keystoreProperties.load(java.io.FileInputStream(keystorePropertiesFile))
+    keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
 
 '''
@@ -84,6 +84,13 @@ SIGNING_KTS_BLOCK = '''    signingConfigs {
 
 def patch_gradle_kts(f):
     s = f.read_text()
+    # Older versions of this script used fully qualified java.* names, which the
+    # Kotlin DSL cannot resolve; switch to imports.
+    s = s.replace('java.util.Properties()', 'Properties()')
+    s = s.replace('java.io.FileInputStream(', 'FileInputStream(')
+    for imp in ('import java.io.FileInputStream', 'import java.util.Properties'):
+        if imp not in s:
+            s = imp + '\n' + s
     if MARK not in s:
         s = re.sub(r'(\nandroid \{)', '\n' + SIGNING_KTS_TOP.rstrip('\n') + r'\n\1', s, count=1)
     if 'isCoreLibraryDesugaringEnabled' not in s:

@@ -13,7 +13,7 @@ class PickedFile {
 
 /// Opens the system file picker. Returns null when the user cancels.
 Future<PickedFile?> pickFile({List<String>? extensions, FileType type = FileType.custom}) async {
-  final r = await FilePicker.platform.pickFiles(
+  final r = await FilePicker.pickFiles(
     type: extensions == null ? type : FileType.custom,
     allowedExtensions: extensions,
     withData: true,
@@ -26,7 +26,7 @@ Future<PickedFile?> pickFile({List<String>? extensions, FileType type = FileType
 }
 
 Future<List<PickedFile>> pickFiles({List<String>? extensions, FileType type = FileType.custom}) async {
-  final r = await FilePicker.platform.pickFiles(
+  final r = await FilePicker.pickFiles(
     type: extensions == null ? type : FileType.custom,
     allowedExtensions: extensions,
     allowMultiple: true,
@@ -44,7 +44,7 @@ Future<List<PickedFile>> pickFiles({List<String>? extensions, FileType type = Fi
 /// Lets the user choose where to save [bytes]. Returns false if cancelled.
 Future<bool> saveBytes(String fileName, List<int> bytes, {String title = 'Save file'}) async {
   final data = Uint8List.fromList(bytes);
-  final path = await FilePicker.platform.saveFile(dialogTitle: title, fileName: fileName, bytes: data);
+  final path = await FilePicker.saveFile(dialogTitle: title, fileName: fileName, bytes: data);
   if (path == null) return false;
   if (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
     // Desktop pickers only return a path; write the file ourselves.
