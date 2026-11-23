@@ -158,6 +158,12 @@ def patch_windows():
     if cm.exists():
         s = cm.read_text()
         s = s.replace('set(BINARY_NAME "quiz_me")', 'set(BINARY_NAME "QuizMe")')
+        # flutter_local_notifications_windows still uses <experimental/coroutine>,
+        # which Visual Studio 2026 rejects unless this is defined.
+        if '_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS' not in s:
+            s = s.replace('add_definitions(-DUNICODE -D_UNICODE)',
+                          'add_definitions(-DUNICODE -D_UNICODE)\n'
+                          'add_definitions(-D_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS)', 1)
         cm.write_text(s)
     rc = win / 'runner/Runner.rc'
     if rc.exists():
