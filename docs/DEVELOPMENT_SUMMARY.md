@@ -41,14 +41,14 @@ Six themes incl. AMOLED, Minimal and Sepia + custom accent, font family/size/lin
 
 `test/core/srs_mastery_test.dart`, `test/core/grading_shuffle_test.dart`, `test/core/excel_import_test.dart`, `test/data/database_test.dart` — about 80 tests covering the 20 areas requested (Excel parsing/validation, correct-answer mapping, shuffling, non-repetition, quiz generation and distribution, scoring, session save/resume, mastery, scheduling, duplicates, persistence, backup/restore, editing, deletion, statistics, theme settings, invalid input) and the listed edge cases (empty bank, three-question bank, 100 requested from 20, re-importing the same file, missing optional fields, interrupted quiz, interrupted import, changing a correct answer after attempts, large import).
 
-Results: _pending the first CI run._
+Results: all tests pass in CI (`flutter test`), `flutter analyze` reports no errors or warnings, and the Android APK and the Windows build (installer + portable zip) are produced by CI.
 
 ## Known limitations
 
-- Not compiled yet (see above).
 - The app's own menus are in English; Arabic content is displayed correctly right-to-left.
 - Reminders are scheduled up to 14 days ahead and refreshed whenever the app is opened or a quiz is finished.
 - Text-to-speech quality and offline availability depend on the voices installed on the phone.
 - Search uses SQL `LIKE` (fast enough for typical libraries; full-text indexing is a possible improvement).
 - The CI APK is signed with the debug key (see README → Testing APK vs signed production release).
-- Windows/iOS builds are prepared by the shared code but have not been built or tested.
+- Windows: built and packaged in CI (Inno Setup installer + portable zip); not yet run on a real PC by the developer. Study reminders are Android/iOS only. The installer is not code-signed, so Windows SmartScreen shows a warning on first install.
+- iOS is prepared by the shared code but has not been built or tested.

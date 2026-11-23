@@ -102,10 +102,11 @@ const quizShortcuts = <(String, String)>[
   ('Enter', 'Check answer / next question'),
   ('→', 'Next question'),
   ('←', 'Previous question'),
-  ('H', 'Show the hint (option keys take priority when a question has 8+ options)'),
+  ('H', 'Show the hint'),
   ('Ctrl+B', 'Bookmark the question'),
   ('Ctrl+G', 'All questions'),
   ('Ctrl+R', 'Read aloud'),
+  ('Ctrl+Enter', 'Submit the quiz'),
   ('Esc', 'Leave the quiz'),
   ('F1', 'Show this list'),
 ];

@@ -52,3 +52,15 @@ Each question page explains its mastery status in plain words ("Recalled 4 times
 ## 7. Settings
 
 Theme (Light, Dark, AMOLED, Minimal White, Sepia, custom accent), font, text size, line spacing, high contrast, reduced motion, layout direction; quiz defaults; daily goal, confidence ratings, adaptive difficulty, spaced-repetition intervals; reminders (time, days); achievements; read-aloud speed; data management (import, export, backup, database info, reset new-question history, clear learning progress).
+
+## 8. Using Quiz me on Windows
+
+The PC version works the same way as the phone app, with keyboard shortcuts:
+
+- **Ctrl+1 … Ctrl+5** — Home, Quiz, Banks, Progress, Settings.
+- In a quiz: **1–9** or **A–J** choose an option, **Enter** checks the answer or goes to the next question, **← / →** move between questions, **H** shows the hint, **Ctrl+B** bookmarks, **Ctrl+G** opens the question grid, **Ctrl+R** reads aloud, **Ctrl+Enter** submits, **Esc** leaves (your answers are saved). **F1** lists the shortcuts.
+- In flashcards: **Space** or **Enter** reveals the answer / goes to the next card, **1–4** rate it, **← / →** move between cards.
+
+While you type in an answer box, the letter and arrow keys type normally; **Enter** still checks the answer and **Esc** leaves the box.
+To move your library between phone and PC, create a backup on one device and restore it on the other (Settings → Backup & restore).
+

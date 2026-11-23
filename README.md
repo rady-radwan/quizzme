@@ -6,7 +6,7 @@ Learn with quizzes and flashcards, revise efficiently with spaced repetition, an
 - **Offline first.** Everything works without internet, accounts or subscriptions. Your data stays on your device.
 - **Excel import.** Write questions in Excel, import them, and they are stored permanently in the app.
 - **Spaced repetition.** An SM-2 based scheduler brings questions back just before you would forget them.
-- **Android first** (Flutter), with the same code base ready for Windows and iOS.
+- **Android and Windows** (Flutter), with the same code base ready for iOS.
 
 ---
 
@@ -14,13 +14,14 @@ Learn with quizzes and flashcards, revise efficiently with spaced repetition, an
 
 1. [Features](#features)
 2. [Install on your Android phone](#install-on-your-android-phone)
-3. [Build from source](#build-from-source)
-4. [Project structure](#project-structure)
-5. [Excel templates](#excel-templates)
-6. [Database](#database)
-7. [Testing](#testing)
-8. [Continuous integration and releases](#continuous-integration-and-releases)
-9. [Documentation](#documentation)
+3. [Install on Windows (PC)](#install-on-windows-pc)
+4. [Build from source](#build-from-source)
+5. [Project structure](#project-structure)
+6. [Excel templates](#excel-templates)
+7. [Database](#database)
+8. [Testing](#testing)
+9. [Continuous integration and releases](#continuous-integration-and-releases)
+10. [Documentation](#documentation)
 
 ---
 
@@ -60,6 +61,28 @@ For a tagged release (`v1.0.0`, …) the APK is also attached to the GitHub **Re
 
 - **CI / testing APK** — signed with Flutter's *debug* key. It installs and works normally for personal use. It cannot be uploaded to Google Play, and an APK signed with a different key cannot update it in place (you would have to uninstall, which deletes app data — **make a backup first**).
 - **Production release** — signed with your own upload key, configured as GitHub secrets (see `.github/workflows/release.yml`). Use the same key for every future release so updates install over the old version and keep your data. Never commit the keystore or passwords; `.gitignore` excludes them.
+
+## Install on Windows (PC)
+
+Every push to `main` builds a Windows version (64-bit Windows 10/11):
+
+- **QuizMe-Setup.exe** — installer. Installs for your user only (no administrator rights needed), adds Start-menu and optional desktop shortcuts, and appears in *Settings → Apps* for uninstalling.
+- **QuizMe-Windows-portable.zip** — no installation: unzip anywhere and run `QuizMe.exe`.
+
+Get them from the latest **CI** run (artifact **quiz-me-windows-…**) or from the `windows` branch.
+The installer is not code-signed, so Windows SmartScreen may say "Windows protected your PC": choose **More info → Run anyway**.
+
+Your library, progress and settings are stored in `%APPDATA%\Rady Radwan\Quiz me`, shared by the installed and portable versions, and kept when you update or uninstall. Move data between your phone and PC with **Settings → Backup & restore**.
+
+Made for the PC: resizable window (with a sensible minimum size), side navigation with labels in large windows, mouse and keyboard friendly. Keyboard shortcuts (press **F1** in a quiz to see them):
+
+| Where | Keys |
+|---|---|
+| Anywhere | **Ctrl+1 … Ctrl+5** switch between Home, Quiz, Banks, Progress, Settings |
+| Quiz | **1–9 / A–J** choose an option · **Enter** check / next · **← →** previous / next · **H** hint · **Ctrl+B** bookmark · **Ctrl+G** all questions · **Ctrl+R** read aloud · **Ctrl+Enter** submit · **Esc** leave |
+| Flashcards | **Space / Enter** reveal / next · **1–4** rate (Forgot … Easy) · **← →** previous / next · **Esc** leave |
+
+Study reminders (notifications) are available on Android and iOS only.
 
 ## Build from source
 
