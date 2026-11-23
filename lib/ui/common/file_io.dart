@@ -1,8 +1,6 @@
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 class PickedFile {
@@ -13,44 +11,34 @@ class PickedFile {
 
 /// Opens the system file picker. Returns null when the user cancels.
 Future<PickedFile?> pickFile({List<String>? extensions, FileType type = FileType.custom}) async {
-  final r = await FilePicker.pickFiles(
+  final f = await FilePicker.pickFile(
     type: extensions == null ? type : FileType.custom,
     allowedExtensions: extensions,
-    withData: true,
   );
-  if (r == null || r.files.isEmpty) return null;
-  final f = r.files.first;
-  final bytes = f.bytes ?? (f.path != null ? await File(f.path!).readAsBytes() : null);
-  if (bytes == null) return null;
-  return PickedFile(f.name, bytes);
+  if (f == null) return null;
+  return PickedFile(f.name, await f.readAsBytes());
 }
 
 Future<List<PickedFile>> pickFiles({List<String>? extensions, FileType type = FileType.custom}) async {
-  final r = await FilePicker.pickFiles(
+  final files = await FilePicker.pickFiles(
     type: extensions == null ? type : FileType.custom,
     allowedExtensions: extensions,
-    allowMultiple: true,
-    withData: true,
   );
-  if (r == null) return [];
   final out = <PickedFile>[];
-  for (final f in r.files) {
-    final bytes = f.bytes ?? (f.path != null ? await File(f.path!).readAsBytes() : null);
-    if (bytes != null) out.add(PickedFile(f.name, bytes));
+  for (final f in files) {
+    out.add(PickedFile(f.name, await f.readAsBytes()));
   }
   return out;
 }
 
 /// Lets the user choose where to save [bytes]. Returns false if cancelled.
 Future<bool> saveBytes(String fileName, List<int> bytes, {String title = 'Save file'}) async {
-  final data = Uint8List.fromList(bytes);
-  final path = await FilePicker.saveFile(dialogTitle: title, fileName: fileName, bytes: data);
-  if (path == null) return false;
-  if (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
-    // Desktop pickers only return a path; write the file ourselves.
-    await File(path).writeAsBytes(data, flush: true);
-  }
-  return true;
+  final uri = await FilePicker.saveFile(
+    fileName: fileName,
+    bytes: Uint8List.fromList(bytes),
+    dialogTitle: title,
+  );
+  return uri != null;
 }
 
 /// Reads a bundled asset (e.g. an Excel template).

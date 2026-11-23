@@ -22,7 +22,7 @@ dependencies:
   path_provider: ^2.1.4
 
   # Files, Excel (.xlsx is a zip of XML parts), backups.
-  file_picker: ^11.0.3
+  file_picker: ^13.4.1
   archive: ^3.6.1
   xml: ^6.5.0
   intl: any
