@@ -20,7 +20,7 @@ import '../data/stats_repository.dart';
 import '../data/study_repository.dart';
 import '../services/notification_service.dart';
 import '../services/speech_service.dart';
-import '../sync/google_auth.dart';
+import '../sync/firebase_auth.dart';
 import '../sync/sync_service.dart';
 import '../sync/sync_store.dart';
 
@@ -91,7 +91,7 @@ class AppServices {
     sync?.dataChanged();
   }
 
-  /// Google Drive sync between devices (null in tests).
+  /// Quiz me account and sync between devices (null in tests).
   SyncService? sync;
 
   static DatabaseFactory platformDatabaseFactory() {
@@ -111,7 +111,7 @@ class AppServices {
       store: SyncStore(db),
       settings: s.settingsRepo,
       media: s.media,
-      auth: GoogleAuth.forPlatform(dir),
+      auth: FirebaseAuthClient(dir),
       onDataChanged: s.dataChanged,
     );
     await s.imports.markInterruptedImports();

@@ -33,8 +33,7 @@ dependencies:
   flutter_tts: ^4.2.0
   audioplayers: ^6.1.0
 
-  # Sync between devices through the app's private Google Drive folder.
-  google_sign_in: ^7.2.0
+  # Accounts and sync between devices (Firebase Auth + Firestore REST APIs).
   http: ^1.2.2
   crypto: ^3.0.6
   ffi: ^2.1.3

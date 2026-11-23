@@ -80,7 +80,7 @@ jobs:
 
       - name: Release signing key (optional repository secrets)
         # With the secrets set, every APK is signed with the same permanent key,
-        # so new versions install over old ones and Google sign-in works.
+        # so new versions install over old ones (no uninstall needed).
         id: signing
         if: steps.pub.outcome == 'success'
         env:
@@ -103,9 +103,12 @@ jobs:
         if: steps.pub.outcome == 'success'
         continue-on-error: true
         env:
-          GOOGLE_WEB_CLIENT_ID: ${{ secrets.QUIZME_GOOGLE_WEB_CLIENT_ID }}
+          FIREBASE_API_KEY: ${{ secrets.QUIZME_FIREBASE_API_KEY }}
+          FIREBASE_PROJECT_ID: ${{ secrets.QUIZME_FIREBASE_PROJECT_ID }}
         run: |
-          flutter build apk --release --dart-define=QUIZME_GOOGLE_WEB_CLIENT_ID="$GOOGLE_WEB_CLIENT_ID" \
+          flutter build apk --release \
+            --dart-define=QUIZME_FIREBASE_API_KEY="$FIREBASE_API_KEY" \
+            --dart-define=QUIZME_FIREBASE_PROJECT_ID="$FIREBASE_PROJECT_ID" \
             2>&1 | tee "$RUNNER_TEMP/reports/build.txt"
 
       - name: Remove signing files
@@ -210,13 +213,13 @@ jobs:
         id: build
         continue-on-error: true
         env:
-          GOOGLE_DESKTOP_CLIENT_ID: ${{ secrets.QUIZME_GOOGLE_DESKTOP_CLIENT_ID }}
-          GOOGLE_DESKTOP_CLIENT_SECRET: ${{ secrets.QUIZME_GOOGLE_DESKTOP_CLIENT_SECRET }}
+          FIREBASE_API_KEY: ${{ secrets.QUIZME_FIREBASE_API_KEY }}
+          FIREBASE_PROJECT_ID: ${{ secrets.QUIZME_FIREBASE_PROJECT_ID }}
         run: |
           flutter pub get
           flutter build windows --release \
-            --dart-define=QUIZME_GOOGLE_DESKTOP_CLIENT_ID="$GOOGLE_DESKTOP_CLIENT_ID" \
-            --dart-define=QUIZME_GOOGLE_DESKTOP_CLIENT_SECRET="$GOOGLE_DESKTOP_CLIENT_SECRET" \
+            --dart-define=QUIZME_FIREBASE_API_KEY="$FIREBASE_API_KEY" \
+            --dart-define=QUIZME_FIREBASE_PROJECT_ID="$FIREBASE_PROJECT_ID" \
             2>&1 | tee "$RUNNER_TEMP/out/windows-build.txt"
 
       - name: Package (portable zip + installer)

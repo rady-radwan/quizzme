@@ -14,7 +14,7 @@ class SyncEntry {
 }
 
 /// Everything that is synchronised: the rows of every synchronised table and
-/// the change log (including deletions). Stored in Google Drive as one
+/// the change log (including deletions). Stored in the user's account as one
 /// gzip-compressed JSON file.
 class SyncSnapshot {
   SyncSnapshot({required this.rows, required this.meta, this.deviceName = '', int? createdAt})
@@ -77,13 +77,13 @@ class SyncSnapshot {
     try {
       m = jsonDecode(utf8.decode(GZipDecoder().decodeBytes(bytes))) as Map<String, Object?>;
     } catch (_) {
-      throw const SyncFormatException('The sync file in Google Drive could not be read.');
+      throw const SyncFormatException('Your cloud data could not be read.');
     }
-    if (m['format'] != format) throw const SyncFormatException('The file in Google Drive is not a Quiz me sync file.');
+    if (m['format'] != format) throw const SyncFormatException('Your cloud data is not in the Quiz me format.');
     if (((m['formatVersion'] as num?)?.toInt() ?? 0) > formatVersion ||
         ((m['schemaVersion'] as num?)?.toInt() ?? 0) > AppDatabase.schemaVersion) {
       throw const SyncFormatException(
-          'Your data in Google Drive was saved by a newer version of Quiz me. Update the app on this device first.');
+          'Your cloud data was saved by a newer version of Quiz me. Update the app on this device first.');
     }
     final rows = <String, Map<String, Map<String, Object?>>>{};
     final tables = (m['tables'] as Map?) ?? const {};

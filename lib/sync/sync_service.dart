@@ -1,36 +1,40 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
+import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 
 import '../data/media_store.dart';
 import '../data/settings_repository.dart';
-import 'drive_client.dart';
-import 'google_auth.dart';
+import 'firebase_auth.dart';
+import 'firestore_backend.dart';
 import 'sync_store.dart';
 
 /// What to do the first time a device connects while both the device and
-/// Google Drive already hold data.
+/// the account already hold data.
 enum FirstSyncChoice {
   /// Combine both; nothing is lost.
   merge,
 
-  /// This device takes the Google Drive copy (its own data is replaced).
+  /// This device takes the account's data (its own data is replaced).
   useCloud,
 
-  /// Google Drive (and then every other device) takes this device's data.
+  /// The account (and then every other device) takes this device's data.
   useDevice,
 }
 
-/// The situation found when connecting.
+/// What was found when signing in.
 enum ConnectState { cloudEmpty, deviceEmpty, bothHaveData }
 
-/// Two-way sync of the learning data through the app's private folder in
-/// the user's Google Drive. Every device downloads the shared copy, merges it
-/// with its own changes (per row, the latest change wins; deletions travel
-/// too) and uploads the result. Settings (theme, font, …) stay per device.
+/// Quiz me accounts (Firebase Authentication, email + password) and
+/// two-way sync of the learning data through Cloud Firestore. Each user's
+/// data is private to them. Every device downloads the account's copy when
+/// it changed, merges it with its own changes (per row, the latest change
+/// wins; deletions travel too) and uploads the result. Settings (theme,
+/// font, …) stay per device.
 class SyncService extends ChangeNotifier {
   SyncService({
     required this.store,
@@ -38,30 +42,29 @@ class SyncService extends ChangeNotifier {
     required this.media,
     required this.auth,
     required this.onDataChanged,
-  });
+  }) : cloud = FirestoreBackend(auth);
 
   final SyncStore store;
   final SettingsRepository settings;
   final MediaStore media;
-  final GoogleAuth auth;
+  final FirebaseAuthClient auth;
+  final FirestoreBackend cloud;
 
   /// Called after changes from another device were applied here.
   final VoidCallback onDataChanged;
 
-  static const fileName = 'quizme-sync.json.gz';
-  static const generationFileName = 'quizme-sync-generation.txt';
-  static const mediaPrefix = 'media-';
-
   static const _kEnabled = 'sync.enabled';
   static const _kLast = 'sync.last';
   static const _kGeneration = 'sync.generation';
+  static const _kVersion = 'sync.version';
+  static const _kHash = 'sync.hash';
 
   bool enabled = false;
   bool busy = false;
   DateTime? lastSync;
   String? error;
 
-  /// Set when the user must sign in again (shown on the Sync screen).
+  /// The session ended: the user has to sign in again.
   bool needsSignIn = false;
 
   Timer? _periodic;
@@ -70,9 +73,8 @@ class SyncService extends ChangeNotifier {
   Future<void>? _running;
 
   bool get available => auth.configured;
+  bool get signedIn => auth.signedIn;
   String? get email => auth.email;
-
-  DriveClient get _drive => DriveClient(() => auth.accessToken());
 
   String get deviceName {
     try {
@@ -83,11 +85,13 @@ class SyncService extends ChangeNotifier {
   }
 
   Future<void> init() async {
-    enabled = await settings.getValue(_kEnabled) == '1';
     final last = int.tryParse(await settings.getValue(_kLast) ?? '');
     lastSync = last == null ? null : DateTime.fromMillisecondsSinceEpoch(last);
-    if (!enabled || !available) return;
+    if (!available) return;
     await auth.restore();
+    enabled = auth.signedIn && await settings.getValue(_kEnabled) == '1';
+    notifyListeners();
+    if (!enabled) return;
     _startTimer();
     unawaited(syncNow());
   }
@@ -115,75 +119,92 @@ class SyncService extends ChangeNotifier {
     }
   }
 
-  // ---------------- Connect / disconnect ----------------
+  // ---------------- Account ----------------
 
-  /// Signs in and looks at what is already in Google Drive.
-  Future<ConnectState> connect() async {
+  Future<ConnectState> signIn(String email, String password) async {
+    await auth.signIn(email, password);
+    return _afterSignIn();
+  }
+
+  Future<ConnectState> createAccount(String email, String password) async {
+    await auth.signUp(email, password);
+    return _afterSignIn();
+  }
+
+  Future<void> sendPasswordReset(String email) => auth.sendPasswordReset(email);
+
+  Future<ConnectState> _afterSignIn() async {
     error = null;
     needsSignIn = false;
-    await auth.signIn();
     notifyListeners();
-    final remote = await _drive.find(fileName);
-    if (remote == null) return ConnectState.cloudEmpty;
+    final m = await cloud.manifest();
+    if (m == null) return ConnectState.cloudEmpty;
     if (!await store.hasLocalData()) return ConnectState.deviceEmpty;
     return ConnectState.bothHaveData;
   }
 
-  /// Completes the first connection and turns sync on.
+  /// Completes the first sign-in on this device and turns sync on.
   Future<void> finishConnect(FirstSyncChoice choice) => _exclusive(() async {
-        final drive = _drive;
-        final file = await drive.find(fileName);
-        if (file == null || choice == FirstSyncChoice.useDevice) {
-          // This device's data becomes the shared copy (new generation, so
-          // other devices replace their data with it on their next sync).
+        final m = await cloud.manifest();
+        if (m == null || choice == FirstSyncChoice.useDevice) {
+          // This device's data becomes the account's copy. A new generation
+          // tells other devices to switch to it instead of merging.
           final snap = await store.snapshot(deviceName: deviceName);
-          if (file == null) {
-            await drive.create(fileName, snap.encode());
-          } else {
-            await drive.update(file.id, snap.encode());
-          }
-          await _writeGeneration(drive, _newGeneration());
+          final generation = _newGeneration();
+          final version = (m?.version ?? 0) + 1;
+          final ok = await cloud.upload(snap.encode(),
+              version: version, generation: generation, device: deviceName, expected: m);
+          if (!ok) throw CloudException('Another device was syncing at the same time. Please try again.');
+          await _remember(version, generation, _hash(snap));
         } else {
-          final remote = SyncSnapshot.decode(await drive.download(file.id));
+          final remote = SyncSnapshot.decode(await cloud.download(m));
           if (choice == FirstSyncChoice.useCloud) {
             await store.replaceWith(remote);
           } else {
             await store.merge(remote);
           }
+          await _remember(m.version, m.generation, _hash(remote));
           _notifyData();
-          await settings.setValue(_kGeneration, await _readGeneration(drive));
         }
         await settings.setValue(_kEnabled, '1');
         enabled = true;
         _startTimer();
-        await _syncOnce(drive);
+        await _syncOnce(forceMedia: true);
       });
 
-  /// Turns sync off on this device (data stays on the device and in Drive).
-  Future<void> disconnect({bool deleteCloudData = false}) async {
+  /// Signs out on this device. The data stays on the device and in the account.
+  Future<void> signOut() async {
     await _running;
-    if (deleteCloudData) {
-      final drive = _drive;
-      for (final f in await drive.list()) {
-        await drive.delete(f.id);
-      }
-    }
     await auth.signOut();
+    await _stop();
+  }
+
+  /// Deletes the account and all of its cloud data. Data on this device stays.
+  Future<void> deleteAccount() async {
+    await _running;
+    await cloud.deleteAll();
+    await auth.deleteAccount();
+    await _stop();
+  }
+
+  Future<void> _stop() async {
     _periodic?.cancel();
     _soon?.cancel();
     enabled = false;
     lastSync = null;
     error = null;
     needsSignIn = false;
-    await settings.setValue(_kEnabled, '0');
-    await settings.setValue(_kGeneration, null);
-    await settings.setValue(_kLast, null);
+    for (final k in [_kEnabled, _kGeneration, _kVersion, _kHash, _kLast]) {
+      await settings.setValue(k, null);
+    }
     notifyListeners();
   }
 
-  /// Signs in again after access expired.
-  Future<void> reauthenticate() async {
-    await auth.signIn();
+  /// Signs in again after the session ended.
+  Future<void> signInAgain(String password) async {
+    final mail = auth.email;
+    if (mail == null) throw const SignInRequired();
+    await auth.signIn(mail, password);
     needsSignIn = false;
     error = null;
     notifyListeners();
@@ -192,14 +213,11 @@ class SyncService extends ChangeNotifier {
 
   // ---------------- Sync ----------------
 
-  /// Syncs now. Errors are kept in [error] (never thrown) unless [rethrowErrors].
-  Future<void> syncNow({bool rethrowErrors = false}) async {
+  /// Syncs now. Errors are kept in [error] unless [rethrowErrors].
+  Future<void> syncNow({bool rethrowErrors = false, bool includeMedia = false}) async {
     if (!enabled || !available) return;
     try {
-      await _exclusive(() async {
-        if (!auth.signedIn) await auth.restore();
-        await _syncOnce(_drive);
-      });
+      await _exclusive(() => _syncOnce(forceMedia: includeMedia));
     } catch (e) {
       if (rethrowErrors) rethrow;
     }
@@ -221,12 +239,6 @@ class SyncService extends ChangeNotifier {
       needsSignIn = true;
       error = e.message;
       rethrow;
-    } on SocketException {
-      error = 'No internet connection. Your changes are kept and will sync later.';
-      rethrow;
-    } on HttpException catch (e) {
-      error = e.message;
-      rethrow;
     } catch (e) {
       error = '$e';
       rethrow;
@@ -238,80 +250,80 @@ class SyncService extends ChangeNotifier {
     }
   }
 
-  Future<void> _syncOnce(DriveClient drive) async {
+  static String _hash(SyncSnapshot s) => sha1.convert(utf8.encode(s.canonical())).toString();
+
+  Future<void> _remember(int version, String generation, String hash) async {
+    await settings.setValue(_kVersion, '$version');
+    await settings.setValue(_kGeneration, generation);
+    await settings.setValue(_kHash, hash);
+  }
+
+  Future<void> _syncOnce({bool forceMedia = false}) async {
+    var mediaNeeded = forceMedia;
     for (var attempt = 0; attempt < 4; attempt++) {
-      final file = await drive.find(fileName);
-      if (file == null) {
-        // The shared copy was deleted (e.g. from another device): recreate.
+      final m = await cloud.manifest();
+      if (m == null) {
+        // Nothing in the account (e.g. deleted from another device): upload.
         final snap = await store.snapshot(deviceName: deviceName);
-        await drive.create(fileName, snap.encode());
-        await _writeGeneration(drive, _newGeneration());
+        final g = _newGeneration();
+        if (!await cloud.upload(snap.encode(), version: 1, generation: g, device: deviceName)) continue;
+        await _remember(1, g, _hash(snap));
+        mediaNeeded = true;
         break;
       }
-      final remote = SyncSnapshot.decode(await drive.download(file.id));
-      final generation = await _readGeneration(drive);
-      final known = await settings.getValue(_kGeneration);
-      if (generation != null && known != null && generation != known) {
-        // Another device chose "use this device's data": follow it.
-        await store.replaceWith(remote);
-        await settings.setValue(_kGeneration, generation);
-        _notifyData();
+      final knownVersion = int.tryParse(await settings.getValue(_kVersion) ?? '');
+      final knownGeneration = await settings.getValue(_kGeneration);
+      String remoteHash;
+      if (m.version != knownVersion || m.generation != knownGeneration) {
+        final remote = SyncSnapshot.decode(await cloud.download(m));
+        if (knownGeneration != null && knownGeneration != m.generation) {
+          // Another device chose "use this device's data": follow it.
+          await store.replaceWith(remote);
+          _notifyData();
+        } else {
+          final r = await store.merge(remote);
+          if (r.changedLocal) _notifyData();
+        }
+        remoteHash = _hash(remote);
+        mediaNeeded = true;
       } else {
-        final r = await store.merge(remote);
-        if (generation != null && known == null) await settings.setValue(_kGeneration, generation);
-        if (r.changedLocal) _notifyData();
+        remoteHash = await settings.getValue(_kHash) ?? '';
       }
       final local = await store.snapshot(deviceName: deviceName);
-      if (local.canonical() != remote.canonical()) {
-        // Upload only if nobody else uploaded in the meantime; otherwise
-        // merge their newer copy first.
-        final now = await drive.metadata(file.id);
-        if (now.version != file.version) continue;
-        await drive.update(file.id, local.encode());
+      final localHash = _hash(local);
+      if (localHash != remoteHash) {
+        final ok = await cloud.upload(local.encode(),
+            version: m.version + 1, generation: m.generation, device: deviceName, expected: m);
+        if (!ok) continue; // Another device uploaded first: merge theirs, then retry.
+        await _remember(m.version + 1, m.generation, localHash);
+        mediaNeeded = true;
+      } else {
+        await _remember(m.version, m.generation, remoteHash);
       }
       break;
     }
-    await _syncMedia(drive);
+    if (mediaNeeded) await _syncMedia();
     lastSync = DateTime.now();
     await settings.setValue(_kLast, '${lastSync!.millisecondsSinceEpoch}');
   }
 
-  /// Images and audio of questions: each file once in Drive (names are
-  /// unique and files never change), copied to devices that lack them.
-  Future<void> _syncMedia(DriveClient drive) async {
-    final remote = {for (final f in await drive.list(prefix: mediaPrefix)) f.name.substring(mediaPrefix.length): f};
+  /// Images and audio of questions: each file stored once in the account
+  /// (names are unique and files never change), copied to devices that lack them.
+  Future<void> _syncMedia() async {
+    final remote = await cloud.mediaNames();
     final local = await media.all();
     for (final e in local.entries) {
-      if (!remote.containsKey(e.key)) {
-        await drive.create('$mediaPrefix${e.key}', await e.value.readAsBytes());
-      }
+      if (!remote.contains(e.key)) await cloud.uploadMedia(e.key, await e.value.readAsBytes());
     }
-    for (final e in remote.entries) {
-      final name = e.key;
+    for (final name in remote) {
       if (local.containsKey(name) || name.isEmpty || name.contains('/') || name.contains('\\') || name.contains('..')) {
         continue;
       }
+      final bytes = await cloud.downloadMedia(name);
+      if (bytes == null) continue;
       await media.ensure();
-      final bytes = await drive.download(e.value.id);
       await File(p.join(media.root.path, name)).writeAsBytes(bytes, flush: true);
     }
-  }
-
-  Future<String?> _readGeneration(DriveClient drive) async {
-    final f = await drive.find(generationFileName);
-    if (f == null) return null;
-    return String.fromCharCodes(await drive.download(f.id)).trim();
-  }
-
-  Future<void> _writeGeneration(DriveClient drive, String g) async {
-    final f = await drive.find(generationFileName);
-    final bytes = g.codeUnits;
-    if (f == null) {
-      await drive.create(generationFileName, bytes, mime: 'text/plain');
-    } else {
-      await drive.update(f.id, bytes, mime: 'text/plain');
-    }
-    await settings.setValue(_kGeneration, g);
   }
 
   String _newGeneration() {

@@ -270,7 +270,7 @@ CREATE TABLE settings (
     2: _syncMigration(),
   };
 
-  /// Tables synchronised between devices (Google Drive sync) and the
+  /// Tables synchronised between devices (account sync) and the
   /// columns forming their key. `settings` stays per device (theme, font…).
   static const Map<String, List<String>> syncKeys = {
     'categories': ['id'],

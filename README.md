@@ -84,9 +84,9 @@ Made for the PC: resizable window (with a sensible minimum size), side navigatio
 
 Study reminders (notifications) are available on Android and iOS only.
 
-### Phone and PC in sync
+### Accounts: phone and PC in sync
 
-**Settings → Sync between devices** keeps your banks, progress, schedules and history the same on every device through a private Quiz me folder in your Google Drive. One-time setup (Google Cloud client ids and a permanent Android signing key as repository secrets): see [docs/SYNC_SETUP.md](docs/SYNC_SETUP.md).
+**Settings → Account & sync** — create a free Quiz me account (email + password) and sign in on each device: banks, progress, schedules and history stay the same everywhere. Friends can create their own accounts; each person's data is private. An account is optional — the app works fully offline without one. Uses Firebase (Authentication + Firestore); one-time project setup: [docs/FIREBASE_SETUP.md](docs/FIREBASE_SETUP.md).
 
 ## Build from source
 

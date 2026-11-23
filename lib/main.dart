@@ -16,7 +16,7 @@ Future<void> main() async {
     return;
   }
   runApp(const QuizMeApp());
-  // Sync with Google Drive when the app comes back to the foreground, and
+  // Sync with the Quiz me account when the app comes back to the foreground, and
   // push pending changes when it goes to the background.
   _lifecycle = AppLifecycleListener(
     onResume: () => AppServices.I.sync?.appResumed(),

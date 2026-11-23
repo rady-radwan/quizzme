@@ -419,11 +419,11 @@ class SettingsScreen extends StatelessWidget {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.sync),
-            title: const Text('Sync between devices'),
+            leading: const Icon(Icons.cloud_sync_outlined),
+            title: const Text('Account & sync'),
             subtitle: Text(svc.sync?.enabled == true
-                ? 'On — Google Drive${svc.sync?.email == null ? '' : ' (${svc.sync!.email})'}'
-                : 'Keep phone and PC up to date through Google Drive'),
+                ? 'Signed in${svc.sync?.email == null ? '' : ' as ${svc.sync!.email}'}'
+                : 'Sign in to keep your phone and PC in sync'),
             onTap: () => Navigator.push(context, MaterialPageRoute<void>(builder: (_) => const SyncScreen())),
           ),
           ListTile(
