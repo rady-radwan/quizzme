@@ -61,6 +61,7 @@ class AnswerArea extends StatelessWidget {
     final multi = question.type == QuestionType.multiple;
     final scheme = Theme.of(context).colorScheme;
     final reduce = MediaQuery.of(context).disableAnimations;
+    final glass = Theme.of(context).extension<GlassTheme>() != null;
     final opts = _ordered;
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       if (multi)
@@ -92,6 +93,9 @@ class AnswerArea extends StatelessWidget {
           }
           final isTf = question.type == QuestionType.trueFalse;
           final letter = optionLetter(i);
+          // Glass themes fill the active option with solid colour.
+          final solid = glass && active;
+          final onAccent = accent == scheme.primary ? scheme.onPrimary : Colors.white;
           return Padding(
             padding: const EdgeInsets.only(bottom: 10),
             child: Semantics(
@@ -107,7 +111,7 @@ class AnswerArea extends StatelessWidget {
                 child: AnimatedContainer(
                   duration: reduce ? Duration.zero : const Duration(milliseconds: 180),
                   decoration: BoxDecoration(
-                    color: active ? accent.withValues(alpha: 0.10) : scheme.surfaceContainerLow,
+                    color: solid ? accent : (active ? accent.withValues(alpha: 0.10) : scheme.surfaceContainerLow),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
                         color: active ? accent : scheme.outlineVariant, width: active ? 2 : 1),
@@ -143,28 +147,30 @@ class AnswerArea extends StatelessWidget {
                               height: 38,
                               alignment: Alignment.center,
                               decoration: BoxDecoration(
-                                color: active ? accent : scheme.surfaceContainerHighest,
+                                color: solid
+                                    ? onAccent.withValues(alpha: 0.22)
+                                    : (active ? accent : scheme.surfaceContainerHighest),
                                 borderRadius: BorderRadius.circular(multi ? 8 : 11),
                               ),
                               child: isTf
                                   ? Icon(o.isCorrect && revealed ? Icons.check : (selected ? Icons.check : Icons.circle_outlined),
-                                      size: 18, color: active ? Colors.white : scheme.onSurfaceVariant)
+                                      size: 18, color: solid ? onAccent : (active ? Colors.white : scheme.onSurfaceVariant))
                                   : Text(letter,
                                       style: TextStyle(
                                           fontSize: 16,
                                           fontWeight: FontWeight.w800,
-                                          color: active ? Colors.white : scheme.onSurface)),
+                                          color: solid ? onAccent : (active ? Colors.white : scheme.onSurface))),
                             ),
                             const SizedBox(width: 14),
                             Expanded(
                               child: ContentText(o.text,
                                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                                       fontWeight: active ? FontWeight.w600 : FontWeight.w500,
-                                      color: active ? accent : null)),
+                                      color: solid ? onAccent : (active ? accent : null))),
                             ),
                             if (mark != null) ...[
                               const SizedBox(width: 8),
-                              Icon(mark, color: accent, size: 26),
+                              Icon(mark, color: solid ? onAccent : accent, size: 26),
                             ],
                           ]),
                         ),

@@ -56,7 +56,13 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        centerTitle: true,
+        toolbarHeight: 60,
+        title: const AppLogo(size: 36, useAmbientColor: true),
+      ),
       body: SafeArea(
+        top: false,
         child: Reloadable<_HomeData>(
           load: _load,
           builder: (context, d, reload) => RefreshIndicator(
@@ -85,11 +91,9 @@ class HomeScreen extends StatelessWidget {
       children: [
         Row(children: [
           Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const AppLogo(size: 44),
-              const SizedBox(height: 6),
-              Text(msg, style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-            ]),
+            child: Text(msg,
+                style: theme.textTheme.bodyMedium
+                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant, fontStyle: FontStyle.italic)),
           ),
           if (d.dash.currentStreak > 0)
             Tooltip(

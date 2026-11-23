@@ -419,7 +419,7 @@ class _QuizPlayerScreenState extends State<QuizPlayerScreen> with WidgetsBinding
             icon: const Icon(Icons.close),
             onPressed: () => Navigator.of(context).maybePop(),
           ),
-          title: const AppLogo(size: 30),
+          title: const AppLogo(size: 30, useAmbientColor: true),
           actions: [
             if (q != null)
               IconButton(
@@ -711,8 +711,12 @@ class _QuizPlayerScreenState extends State<QuizPlayerScreen> with WidgetsBinding
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
       decoration: BoxDecoration(
-        color: theme.scaffoldBackgroundColor,
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 10, offset: const Offset(0, -2))],
+        // Glass themes have a transparent scaffold: use a frosted panel instead.
+        color: theme.scaffoldBackgroundColor.a < 1 ? scheme.surfaceContainerHigh : theme.scaffoldBackgroundColor,
+        borderRadius: theme.scaffoldBackgroundColor.a < 1 ? const BorderRadius.vertical(top: Radius.circular(24)) : null,
+        boxShadow: theme.scaffoldBackgroundColor.a < 1
+            ? null
+            : [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 10, offset: const Offset(0, -2))],
       ),
       child: Readable(
         child: Column(mainAxisSize: MainAxisSize.min, children: [

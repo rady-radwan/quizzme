@@ -57,9 +57,9 @@ class SettingsScreen extends StatelessWidget {
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             Text('Theme', style: t.labelLarge),
             const SizedBox(height: 8),
-            Wrap(spacing: 6, runSpacing: 6, children: [
+            Wrap(spacing: 10, runSpacing: 10, children: [
               for (final th in AppTheme.values)
-                ChoiceChip(label: Text(th.label), selected: s.theme == th, onSelected: (_) => set(s.copyWith(theme: th))),
+                _ThemeTile(theme: th, selected: s.theme == th, onTap: () => set(s.copyWith(theme: th))),
             ]),
             const SizedBox(height: 12),
             SwitchListTile(
@@ -535,5 +535,89 @@ class SettingsScreen extends StatelessWidget {
         ]),
       ),
     ];
+  }
+}
+
+
+/// A small preview of a theme: a swatch (gradient for glassy themes) + name.
+class _ThemeTile extends StatelessWidget {
+  const _ThemeTile({required this.theme, required this.selected, required this.onTap});
+  final AppTheme theme;
+  final bool selected;
+  final VoidCallback onTap;
+
+  List<Color> get _colors {
+    final g = glassPalettes[theme];
+    if (g != null) return [g.band, g.bodyTop, g.bodyBottom];
+    switch (theme) {
+      case AppTheme.system:
+        return [Colors.white, const Color(0xFF1E1E1E)];
+      case AppTheme.light:
+        return [const Color(0xFFF7F8FC), const Color(0xFFDDE3F5)];
+      case AppTheme.dark:
+        return [const Color(0xFF2A2D36), const Color(0xFF15171C)];
+      case AppTheme.amoled:
+        return [Colors.black, Colors.black];
+      case AppTheme.minimal:
+        return [Colors.white, const Color(0xFFF2F2F2)];
+      case AppTheme.sepia:
+        return [const Color(0xFFF5EDDC), const Color(0xFFE6D8BD)];
+      default:
+        return [Colors.white, Colors.white];
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final g = glassPalettes[theme];
+    final accent = g?.primary ?? brandBlue;
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: 'Theme ${theme.label}',
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: onTap,
+        child: SizedBox(
+          width: 96,
+          child: Column(children: [
+            Container(
+              height: 64,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                    begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: _colors),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                    color: selected ? scheme.primary : scheme.outlineVariant, width: selected ? 3 : 1),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(10, 22, 10, 8),
+                child: Column(children: [
+                  Container(
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: g != null ? 0.75 : 0.5),
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Container(
+                    height: 10,
+                    decoration: BoxDecoration(color: accent, borderRadius: BorderRadius.circular(5)),
+                  ),
+                ]),
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(theme.label,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                style: TextStyle(
+                    fontSize: 12, fontWeight: selected ? FontWeight.w700 : FontWeight.w500)),
+          ]),
+        ),
+      ),
+    );
   }
 }

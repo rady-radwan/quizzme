@@ -11,7 +11,13 @@ enum AppTheme {
   dark('dark', 'Dark'),
   amoled('amoled', 'AMOLED Black'),
   minimal('minimal', 'Minimal White'),
-  sepia('sepia', 'Sepia');
+  sepia('sepia', 'Sepia'),
+  glassBlue('glass_blue', 'Glassy Blue'),
+  glassTeal('glass_teal', 'Glassy Teal'),
+  glassYellow('glass_yellow', 'Glassy Yellow'),
+  glassPurple('glass_purple', 'Glassy Purple'),
+  glassPink('glass_pink', 'Glassy Pink'),
+  glassMidnight('glass_midnight', 'Glassy Midnight');
 
   const AppTheme(this.key, this.label);
   final String key;

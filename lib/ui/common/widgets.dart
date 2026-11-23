@@ -450,9 +450,13 @@ class Readable extends StatelessWidget {
 
 /// The Quiz me logo: graduation-cap emblem with "Quiz" + orange "me".
 class AppLogo extends StatelessWidget {
-  const AppLogo({super.key, this.size = 32, this.showText = true});
+  const AppLogo({super.key, this.size = 32, this.showText = true, this.useAmbientColor = false});
   final double size;
   final bool showText;
+
+  /// Use the surrounding text colour for "Quiz" (e.g. white on a coloured
+  /// app bar). Otherwise navy on light backgrounds and white on dark ones.
+  final bool useAmbientColor;
 
   @override
   Widget build(BuildContext context) {
@@ -467,7 +471,12 @@ class AppLogo extends StatelessWidget {
             SizedBox(width: size * 0.22),
             Text.rich(
               TextSpan(children: [
-                TextSpan(text: 'Quiz ', style: TextStyle(color: dark ? Colors.white : brandNavy)),
+                TextSpan(
+                    text: 'Quiz ',
+                    style: TextStyle(
+                        color: useAmbientColor
+                            ? (DefaultTextStyle.of(context).style.color ?? (dark ? Colors.white : brandNavy))
+                            : (dark ? Colors.white : brandNavy))),
                 const TextSpan(text: 'me', style: TextStyle(color: brandOrange)),
               ]),
               style: TextStyle(fontSize: size * 0.72, fontWeight: FontWeight.w800, letterSpacing: -0.3),
