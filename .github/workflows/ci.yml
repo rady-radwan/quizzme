@@ -92,6 +92,22 @@ jobs:
           path: build/app/outputs/flutter-apk/app-release.apk
           retention-days: 30
 
+      - name: Publish APK to the apk branch
+        # Keeps only the latest APK (force-pushed, no history) so it can be
+        # fetched with plain git, e.g. by an assistant delivering the file.
+        if: steps.apk.outcome == 'success' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          D="$RUNNER_TEMP/apk-branch"
+          mkdir -p "$D"
+          cp build/app/outputs/flutter-apk/app-release.apk "$D/quiz-me.apk"
+          printf 'Commit: %s\nRun: %s\n' "${{ github.sha }}" "${{ github.run_number }}" > "$D/BUILD.txt"
+          cd "$D"
+          git init -q -b apk
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add . && git commit -q -m "APK for ${{ github.sha }}"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" apk
+
       - name: Commit generated platform folders
         if: steps.platforms.outputs.generated == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
