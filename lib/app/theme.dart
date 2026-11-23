@@ -13,7 +13,14 @@ class AppSpacing {
   static const double radius = 16;
 }
 
+/// Brand colours taken from the Quiz me logo.
+const Color brandBlue = Color(0xFF1E5BD6);
+const Color brandNavy = Color(0xFF0E2A63);
+const Color brandOrange = Color(0xFFFF7A00);
+const Color brandGold = Color(0xFFFFB300);
+
 const List<int> accentChoices = [
+  0xFF1E5BD6, // brand blue
   0xFF3F51B5, // indigo
   0xFF1E88E5, // blue
   0xFF00897B, // teal
@@ -60,7 +67,7 @@ class AppThemes {
       s.useCustomAccent ? Color(s.accentColor) : fallback;
 
   static ColorScheme _scheme(AppSettings s, Brightness b, {Color? seed}) => ColorScheme.fromSeed(
-        seedColor: seed ?? _seed(s, const Color(0xFF3F51B5)),
+        seedColor: seed ?? _seed(s, brandBlue),
         brightness: b,
         contrastLevel: s.highContrast ? 1.0 : 0.0,
       );

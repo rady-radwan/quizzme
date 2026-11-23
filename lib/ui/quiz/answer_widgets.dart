@@ -60,90 +60,115 @@ class AnswerArea extends StatelessWidget {
   Widget _choices(BuildContext context) {
     final multi = question.type == QuestionType.multiple;
     final scheme = Theme.of(context).colorScheme;
+    final reduce = MediaQuery.of(context).disableAnimations;
     final opts = _ordered;
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       if (multi)
         Padding(
-          padding: const EdgeInsets.only(bottom: 8),
+          padding: const EdgeInsets.only(bottom: 8, left: 4),
           child: Text('Select all that apply', style: Theme.of(context).textTheme.bodySmall),
         ),
       for (var i = 0; i < opts.length; i++)
         Builder(builder: (context) {
           final o = opts[i];
           final selected = response.selected.contains(o.id);
-          Color? border;
-          Color? fill;
-          IconData? mark;
+          var accent = scheme.primary;
+          var active = selected;
+          IconData? mark = selected ? Icons.check_circle : null;
+          var dim = false;
           if (revealed) {
             if (o.isCorrect) {
-              border = correctColor(scheme);
-              fill = border.withValues(alpha: 0.10);
+              accent = correctColor(scheme);
+              active = true;
               mark = Icons.check_circle;
             } else if (selected) {
-              border = incorrectColor(scheme);
-              fill = border.withValues(alpha: 0.10);
+              accent = incorrectColor(scheme);
+              active = true;
               mark = Icons.cancel;
+            } else {
+              dim = true;
+              mark = null;
             }
-          } else if (selected) {
-            border = scheme.primary;
-            fill = scheme.primaryContainer.withValues(alpha: 0.6);
           }
-          final letter = question.type == QuestionType.trueFalse ? '' : optionLetter(i);
+          final isTf = question.type == QuestionType.trueFalse;
+          final letter = optionLetter(i);
           return Padding(
             padding: const EdgeInsets.only(bottom: 10),
             child: Semantics(
               button: true,
               selected: selected,
-              label: '${letter.isEmpty ? '' : 'Option $letter: '}${o.text}'
+              label: '${isTf ? '' : 'Option $letter: '}${o.text}'
                   '${revealed && o.isCorrect ? ', correct answer' : ''}'
                   '${revealed && selected && !o.isCorrect ? ', your answer, incorrect' : ''}',
               excludeSemantics: true,
-              child: Material(
-                color: fill ?? scheme.surfaceContainerLow,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  side: BorderSide(color: border ?? scheme.outlineVariant, width: border == null ? 1 : 2),
-                ),
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(14),
-                  onTap: locked
-                      ? null
-                      : () {
-                          final s = {...response.selected};
-                          if (multi) {
-                            selected ? s.remove(o.id) : s.add(o.id);
-                          } else {
-                            s
-                              ..clear()
-                              ..add(o.id);
-                          }
-                          onChanged(response.copyWith(selected: s));
-                        },
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(minHeight: 56),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                      child: Row(children: [
-                        if (multi)
-                          Icon(selected ? Icons.check_box : Icons.check_box_outline_blank,
-                              color: selected ? scheme.primary : scheme.outline)
-                        else if (letter.isNotEmpty)
-                          CircleAvatar(
-                            radius: 14,
-                            backgroundColor: selected ? scheme.primary : scheme.surfaceContainerHighest,
-                            child: Text(letter,
-                                style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w700,
-                                    color: selected ? scheme.onPrimary : scheme.onSurface)),
-                          ),
-                        const SizedBox(width: 12),
-                        Expanded(child: ContentText(o.text, style: Theme.of(context).textTheme.bodyLarge)),
-                        if (mark != null) ...[
-                          const SizedBox(width: 8),
-                          Icon(mark, color: border),
-                        ],
-                      ]),
+              child: AnimatedOpacity(
+                duration: reduce ? Duration.zero : const Duration(milliseconds: 200),
+                opacity: dim ? 0.55 : 1,
+                child: AnimatedContainer(
+                  duration: reduce ? Duration.zero : const Duration(milliseconds: 180),
+                  decoration: BoxDecoration(
+                    color: active ? accent.withValues(alpha: 0.10) : scheme.surfaceContainerLow,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                        color: active ? accent : scheme.outlineVariant, width: active ? 2 : 1),
+                    boxShadow: active && !reduce
+                        ? [BoxShadow(color: accent.withValues(alpha: 0.22), blurRadius: 12, offset: const Offset(0, 3))]
+                        : null,
+                  ),
+                  child: Material(
+                    type: MaterialType.transparency,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(16),
+                      onTap: locked
+                          ? null
+                          : () {
+                              final s = {...response.selected};
+                              if (multi) {
+                                selected ? s.remove(o.id) : s.add(o.id);
+                              } else {
+                                s
+                                  ..clear()
+                                  ..add(o.id);
+                              }
+                              onChanged(response.copyWith(selected: s));
+                            },
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(minHeight: 60),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          child: Row(children: [
+                            AnimatedContainer(
+                              duration: reduce ? Duration.zero : const Duration(milliseconds: 180),
+                              width: 38,
+                              height: 38,
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: active ? accent : scheme.surfaceContainerHighest,
+                                borderRadius: BorderRadius.circular(multi ? 8 : 11),
+                              ),
+                              child: isTf
+                                  ? Icon(o.isCorrect && revealed ? Icons.check : (selected ? Icons.check : Icons.circle_outlined),
+                                      size: 18, color: active ? Colors.white : scheme.onSurfaceVariant)
+                                  : Text(letter,
+                                      style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w800,
+                                          color: active ? Colors.white : scheme.onSurface)),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: ContentText(o.text,
+                                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                      fontWeight: active ? FontWeight.w600 : FontWeight.w500,
+                                      color: active ? accent : null)),
+                            ),
+                            if (mark != null) ...[
+                              const SizedBox(width: 8),
+                              Icon(mark, color: accent, size: 26),
+                            ],
+                          ]),
+                        ),
+                      ),
                     ),
                   ),
                 ),

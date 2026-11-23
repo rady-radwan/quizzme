@@ -7,7 +7,6 @@ import '../../core/dates.dart';
 import '../../core/grading.dart';
 import '../../core/models.dart';
 import '../../data/session_repository.dart';
-import '../common/charts.dart';
 import '../common/reloadable.dart';
 import '../common/widgets.dart';
 import 'quiz_launcher.dart';
@@ -66,38 +65,24 @@ class _ResultsScreenState extends State<ResultsScreen> {
             children: [
               Readable(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                  Text(s.status == SessionStatus.completed ? 'Quiz completed!' : 'Quiz not finished',
-                      style: t.headlineSmall?.copyWith(fontWeight: FontWeight.w800)),
-                  Text(s.title, style: t.titleMedium),
-                  Text(fmt.format(s.completedAt ?? s.createdAt), style: t.bodySmall),
-                  const SizedBox(height: 16),
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Row(children: [
-                        DonutChart(
-                          size: 120,
-                          segments: [
-                            ('Correct', s.correct.toDouble(), correctColor(scheme)),
-                            ('Incorrect', s.incorrect.toDouble(), incorrectColor(scheme)),
-                            ('Unanswered', s.unanswered.toDouble(), scheme.outlineVariant),
-                          ],
-                          center: Text('${s.score?.round() ?? 0}%',
-                              style: t.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
-                        ),
-                        const SizedBox(width: 20),
-                        Expanded(
-                          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                            _line('Total questions', '${s.total}'),
-                            _line('Correct answers', '${s.correct}'),
-                            _line('Incorrect answers', '${s.incorrect}'),
-                            _line('Unanswered', '$skipped'),
-                            _line('Accuracy', percent(s.accuracy)),
-                            _line('Time', formatDuration(Duration(milliseconds: s.elapsedMs))),
-                          ]),
-                        ),
-                      ]),
-                    ),
+                  _scoreCard(context, s),
+                  const SizedBox(height: 12),
+                  StatGrid(minTileWidth: 110, children: [
+                    StatTile(
+                        label: 'Correct', value: '${s.correct}', icon: Icons.check_circle, color: correctColor(scheme)),
+                    StatTile(
+                        label: 'Incorrect', value: '${s.incorrect}', icon: Icons.cancel, color: incorrectColor(scheme)),
+                    StatTile(label: 'Unanswered', value: '$skipped', icon: Icons.remove_circle_outline),
+                    StatTile(label: 'Accuracy', value: percent(s.accuracy), icon: Icons.track_changes),
+                    StatTile(
+                        label: 'Time',
+                        value: formatDuration(Duration(milliseconds: s.elapsedMs)),
+                        icon: Icons.timer_outlined),
+                    StatTile(label: 'Questions', value: '${s.total}', icon: Icons.quiz_outlined),
+                  ]),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Text(fmt.format(s.completedAt ?? s.createdAt), style: t.bodySmall),
                   ),
                   if (pending.isNotEmpty) ...[
                     const SectionHeader('Check your written answers'),
@@ -148,13 +133,64 @@ class _ResultsScreenState extends State<ResultsScreen> {
     );
   }
 
-  static Widget _line(String k, String v) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 2),
-        child: Row(children: [
-          Expanded(child: Text(k)),
-          Text(v, style: const TextStyle(fontWeight: FontWeight.w700)),
-        ]),
-      );
+  Widget _scoreCard(BuildContext context, QuizSession s) {
+    final scheme = Theme.of(context).colorScheme;
+    final t = Theme.of(context).textTheme;
+    final score = s.score?.round() ?? 0;
+    final message = score >= 90
+        ? 'Outstanding! 🎉'
+        : score >= 75
+            ? 'Great work!'
+            : score >= 50
+                ? 'Good effort — review your mistakes.'
+                : 'Keep practising — you\'ll get there.';
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 22, 20, 22),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [scheme.primary, Color.lerp(scheme.primary, scheme.tertiary, 0.8)!],
+        ),
+        borderRadius: BorderRadius.circular(26),
+      ),
+      child: Column(children: [
+        Text(s.status == SessionStatus.completed ? 'Quiz completed!' : 'Quiz not finished',
+            style: t.headlineSmall?.copyWith(color: Colors.white, fontWeight: FontWeight.w800)),
+        const SizedBox(height: 4),
+        Text(s.title,
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: t.bodyMedium?.copyWith(color: Colors.white.withValues(alpha: 0.85))),
+        const SizedBox(height: 18),
+        Text('Your final score is', style: t.titleMedium?.copyWith(color: Colors.white)),
+        const SizedBox(height: 12),
+        Semantics(
+          label: 'Score $score percent',
+          child: Container(
+            width: 150,
+            height: 150,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: const LinearGradient(
+                  begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [brandGold, brandOrange]),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.85), width: 5),
+              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.25), blurRadius: 18, offset: const Offset(0, 8))],
+            ),
+            alignment: Alignment.center,
+            child: ExcludeSemantics(
+              child: Text('$score%',
+                  style: const TextStyle(fontSize: 44, fontWeight: FontWeight.w900, color: Colors.white)),
+            ),
+          ),
+        ),
+        const SizedBox(height: 14),
+        Text('${s.correct} of ${s.total} correct · $message',
+            textAlign: TextAlign.center, style: t.bodyLarge?.copyWith(color: Colors.white)),
+      ]),
+    );
+  }
 
   Widget _pendingCard(BuildContext context, SessionItem it, Question q) {
     return Padding(

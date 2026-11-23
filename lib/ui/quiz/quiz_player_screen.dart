@@ -402,7 +402,7 @@ class _QuizPlayerScreenState extends State<QuizPlayerScreen> with WidgetsBinding
     final revealed = _immediate && result != null && result != AttemptResult.review;
     final response = _responses[pos] ?? QuestionResponse();
     final theme = Theme.of(context);
-    final answeredCount = _results.length;
+    final bookmarked = q != null && _bookmarks.contains(q.id);
 
     return PopScope(
       canPop: false,
@@ -413,13 +413,35 @@ class _QuizPlayerScreenState extends State<QuizPlayerScreen> with WidgetsBinding
       },
       child: Scaffold(
         appBar: AppBar(
-          title: Text(_session!.title, maxLines: 1, overflow: TextOverflow.ellipsis),
+          centerTitle: true,
+          leading: IconButton(
+            tooltip: 'Leave quiz',
+            icon: const Icon(Icons.close),
+            onPressed: () => Navigator.of(context).maybePop(),
+          ),
+          title: const AppLogo(size: 30),
           actions: [
-            if (_cfg.timerEnabled || _cfg.isExam) _timerChip(context),
-            IconButton(
-              tooltip: 'All questions',
-              icon: const Icon(Icons.grid_view),
-              onPressed: _showGrid,
+            if (q != null)
+              IconButton(
+                tooltip: bookmarked ? 'Remove bookmark' : 'Bookmark',
+                icon: Icon(bookmarked ? Icons.bookmark : Icons.bookmark_border),
+                onPressed: _toggleBookmark,
+              ),
+            PopupMenuButton<String>(
+              tooltip: 'More',
+              onSelected: (v) {
+                if (v == 'grid') _showGrid();
+                if (v == 'submit') _finish();
+                if (v == 'speak' && q != null) _svc.speech.speak(_speechText(q));
+              },
+              itemBuilder: (_) => const [
+                PopupMenuItem(
+                    value: 'grid', child: ListTile(leading: Icon(Icons.grid_view), title: Text('All questions'))),
+                PopupMenuItem(
+                    value: 'speak', child: ListTile(leading: Icon(Icons.volume_up_outlined), title: Text('Read aloud'))),
+                PopupMenuItem(
+                    value: 'submit', child: ListTile(leading: Icon(Icons.flag_outlined), title: Text('Submit quiz'))),
+              ],
             ),
           ],
         ),
@@ -429,55 +451,16 @@ class _QuizPlayerScreenState extends State<QuizPlayerScreen> with WidgetsBinding
                 ? const Center(child: Text('Question unavailable'))
                 : SafeArea(
                     child: Column(children: [
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
-                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          if (_paths[q.bankId] != null)
-                            Text(_paths[q.bankId]!,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: theme.textTheme.bodySmall),
-                          const SizedBox(height: 4),
-                          Row(children: [
-                            Text('Question ${_index + 1} of ${_items.length}',
-                                style: theme.textTheme.labelLarge),
-                            const Spacer(),
-                            Text('$answeredCount answered', style: theme.textTheme.bodySmall),
-                          ]),
-                          const SizedBox(height: 6),
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(6),
-                            child: LinearProgressIndicator(
-                              value: (_index + 1) / _items.length,
-                              minHeight: 6,
-                              semanticsLabel: 'Quiz progress',
-                              semanticsValue: 'Question ${_index + 1} of ${_items.length}',
-                            ),
-                          ),
-                        ]),
-                      ),
                       Expanded(
                         child: ListView(
-                          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                          padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
                           children: [
                             Readable(
                               child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                                Card(
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(16),
-                                    child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                                      Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                        Expanded(
-                                          child: ContentText(q.text,
-                                              style: theme.textTheme.titleLarge?.copyWith(height: 1.35)),
-                                        ),
-                                        SpeakButton(text: _speechText(q)),
-                                      ]),
-                                      QuestionMedia(question: q),
-                                    ]),
-                                  ),
-                                ),
+                                _headerCard(context, q),
                                 const SizedBox(height: 14),
+                                _questionCard(context, q),
+                                const SizedBox(height: 16),
                                 AnswerArea(
                                   key: ValueKey('answer-$pos'),
                                   question: q,
@@ -488,14 +471,22 @@ class _QuizPlayerScreenState extends State<QuizPlayerScreen> with WidgetsBinding
                                   locked: _locked || _busy,
                                   textController: _textCtrl,
                                 ),
+                                const SizedBox(height: 6),
+                                _helperRow(context, q, bookmarked),
                                 if (_hintShown.contains(pos) && (q.hint ?? '').isNotEmpty) ...[
-                                  const SizedBox(height: 8),
-                                  Card(
-                                    color: theme.colorScheme.tertiaryContainer,
-                                    child: ListTile(
-                                      leading: const Icon(Icons.lightbulb_outline),
-                                      title: ContentText(q.hint!),
+                                  const SizedBox(height: 10),
+                                  Container(
+                                    padding: const EdgeInsets.all(14),
+                                    decoration: BoxDecoration(
+                                      color: brandGold.withValues(alpha: 0.14),
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(color: brandGold.withValues(alpha: 0.6)),
                                     ),
+                                    child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                      const Icon(Icons.lightbulb, color: brandGold),
+                                      const SizedBox(width: 10),
+                                      Expanded(child: ContentText(q.hint!)),
+                                    ]),
                                   ),
                                 ],
                                 if (revealed) ...[
@@ -528,11 +519,153 @@ class _QuizPlayerScreenState extends State<QuizPlayerScreen> with WidgetsBinding
                           ],
                         ),
                       ),
-                      _bottomBar(context, q, response, result),
+                      _bottomBar(context, q, response, result, theme),
                     ]),
                   ),
       ),
     );
+  }
+
+  /// "English / Grammar · Question 12 of 25" with a progress (or countdown) ring.
+  Widget _headerCard(BuildContext context, Question q) {
+    final t = Theme.of(context).textTheme;
+    final scheme = Theme.of(context).colorScheme;
+    final path = (_paths[q.bankId] ?? '').split(' → ').where((p) => p.isNotEmpty).toList();
+    final shortPath = path.length > 2 ? path.sublist(path.length - 2) : path;
+    final progress = (_index + 1) / _items.length;
+    final rem = _remainingMs;
+    Widget ring;
+    if (rem != null) {
+      final d = Duration(milliseconds: rem < 0 ? 0 : rem);
+      final total = _cfg.timeLimitMinutes * 60000;
+      final text = d.inMinutes >= 1
+          ? '${d.inMinutes}:${(d.inSeconds % 60).toString().padLeft(2, '0')}'
+          : '${d.inSeconds}s';
+      ring = ProgressRing(
+        value: total == 0 ? 0 : rem / total,
+        label: text,
+        color: rem < 60000 ? incorrectColor(scheme) : null,
+        semanticLabel: 'Time left $text',
+      );
+    } else {
+      ring = ProgressRing(
+        value: progress,
+        label: '${(progress * 100).round()}%',
+        semanticLabel: 'Quiz progress ${(progress * 100).round()} percent',
+      );
+    }
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainer,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.6)),
+      ),
+      child: Column(children: [
+        Row(children: [
+          Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(colors: [scheme.primary, Color.lerp(scheme.primary, scheme.tertiary, 0.75)!]),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Icon(Icons.menu_book_rounded, color: Colors.white),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(shortPath.isEmpty ? _session!.title : shortPath.join(' / '),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: t.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+              const SizedBox(height: 2),
+              Text('Question ${_index + 1} of ${_items.length}',
+                  style: t.bodyMedium?.copyWith(color: scheme.primary, fontWeight: FontWeight.w600)),
+            ]),
+          ),
+          const SizedBox(width: 8),
+          ring,
+        ]),
+        const SizedBox(height: 12),
+        GradientProgressBar(value: progress),
+      ]),
+    );
+  }
+
+  Widget _questionCard(BuildContext context, Question q) {
+    final t = Theme.of(context).textTheme;
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.fromLTRB(18, 14, 8, 18),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [scheme.primary.withValues(alpha: 0.10), scheme.tertiary.withValues(alpha: 0.06)],
+        ),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: scheme.primary.withValues(alpha: 0.45), width: 1.5),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Row(children: [
+          CircleAvatar(
+            radius: 13,
+            backgroundColor: scheme.primary,
+            child: Text('?', style: TextStyle(color: scheme.onPrimary, fontWeight: FontWeight.w800)),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text('QUESTION ${_index + 1}',
+                style: t.labelLarge?.copyWith(
+                    color: scheme.primary, fontWeight: FontWeight.w800, letterSpacing: 1.1)),
+          ),
+          SpeakButton(text: _speechText(q)),
+        ]),
+        const SizedBox(height: 8),
+        Padding(
+          padding: const EdgeInsets.only(right: 10),
+          child: ContentText(q.text,
+              style: t.headlineSmall?.copyWith(fontWeight: FontWeight.w700, height: 1.3)),
+        ),
+        Padding(padding: const EdgeInsets.only(right: 10), child: QuestionMedia(question: q)),
+      ]),
+    );
+  }
+
+  /// Hint and Bookmark as two pill buttons side by side.
+  Widget _helperRow(BuildContext context, Question q, bool bookmarked) {
+    final scheme = Theme.of(context).colorScheme;
+    final pos = _item.position;
+    final hintAvailable = _cfg.hintsAllowed && (q.hint ?? '').isNotEmpty;
+    final canHint = hintAvailable && !_hintShown.contains(pos) && !_locked;
+    ButtonStyle pill() => OutlinedButton.styleFrom(
+          minimumSize: const Size(0, 50),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          side: BorderSide(color: scheme.outlineVariant),
+          backgroundColor: scheme.surfaceContainerLow,
+        );
+    return Row(children: [
+      if (hintAvailable) ...[
+        Expanded(
+          child: OutlinedButton.icon(
+            style: pill(),
+            onPressed: canHint ? _showHint : null,
+            icon: const Icon(Icons.lightbulb_outline, color: brandGold),
+            label: Text(_hintShown.contains(pos) ? 'Hint shown' : 'Hint'),
+          ),
+        ),
+        const SizedBox(width: 10),
+      ],
+      Expanded(
+        child: OutlinedButton.icon(
+          style: pill(),
+          onPressed: _toggleBookmark,
+          icon: Icon(bookmarked ? Icons.bookmark : Icons.bookmark_border, color: const Color(0xFFE0457B)),
+          label: Text(bookmarked ? 'Bookmarked' : 'Bookmark'),
+        ),
+      ),
+    ]);
   }
 
   String _speechText(Question q) {
@@ -549,81 +682,64 @@ class _QuizPlayerScreenState extends State<QuizPlayerScreen> with WidgetsBinding
     return b.toString();
   }
 
-  Widget _timerChip(BuildContext context) {
-    final rem = _remainingMs;
-    final ms = rem ?? _elapsedMs;
-    final d = Duration(milliseconds: ms < 0 ? 0 : ms);
-    final text = '${d.inMinutes.toString().padLeft(2, '0')}:${(d.inSeconds % 60).toString().padLeft(2, '0')}';
-    final low = rem != null && rem < 60000;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4),
-      child: Chip(
-        avatar: Icon(rem == null ? Icons.timer_outlined : Icons.hourglass_bottom, size: 18),
-        label: Text(text, semanticsLabel: rem == null ? 'Elapsed $text' : 'Time left $text'),
-        backgroundColor: low ? Theme.of(context).colorScheme.errorContainer : null,
-      ),
-    );
-  }
-
-  Widget _bottomBar(BuildContext context, Question q, QuestionResponse response, AttemptResult? result) {
-    final pos = _item.position;
-    final canHint = _cfg.hintsAllowed && (q.hint ?? '').isNotEmpty && !_hintShown.contains(pos) && !_locked;
+  Widget _bottomBar(BuildContext context, Question q, QuestionResponse response, AttemptResult? result, ThemeData theme) {
     final answered = isAnswered(q, response);
     final last = _index == _items.length - 1;
-    final bookmarked = _bookmarks.contains(q.id);
-    Widget primary;
+    final scheme = theme.colorScheme;
+    final awaitingSubmit = _immediate && (result == null || result == AttemptResult.review);
+
+    String label;
+    IconData icon;
+    VoidCallback? action;
     if (_immediate) {
-      if (result == null || result == AttemptResult.review) {
-        primary = FilledButton(
-          onPressed: answered && !_busy ? _submit : null,
-          child: const Text('Submit answer'),
-        );
+      if (awaitingSubmit) {
+        label = 'Check Answer';
+        icon = Icons.check_circle_outline;
+        action = answered && !_busy ? _submit : null;
       } else {
-        primary = FilledButton(onPressed: _busy ? null : _next, child: Text(last ? 'Finish quiz' : 'Next question'));
+        label = last ? 'Finish Quiz' : 'Next Question';
+        icon = last ? Icons.flag_outlined : Icons.arrow_forward_rounded;
+        action = _busy ? null : _next;
       }
     } else {
-      primary = last
-          ? FilledButton(onPressed: () => _finish(), child: const Text('Submit quiz'))
-          : FilledButton(onPressed: () => _show(_index + 1), child: Text(answered ? 'Next' : 'Skip'));
+      label = last ? 'Submit Quiz' : 'Next';
+      icon = last ? Icons.flag_outlined : Icons.arrow_forward_rounded;
+      action = last ? () => _finish() : () => _show(_index + 1);
     }
-    return Material(
-      elevation: 3,
-      color: Theme.of(context).colorScheme.surfaceContainer,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(8, 8, 12, 8),
-        child: Row(children: [
-          IconButton(
-            tooltip: 'Previous question',
-            icon: const Icon(Icons.chevron_left),
-            onPressed: _index == 0 ? null : () => _show(_index - 1),
-          ),
-          IconButton(
-            tooltip: bookmarked ? 'Remove bookmark' : 'Bookmark',
-            icon: Icon(bookmarked ? Icons.bookmark : Icons.bookmark_border),
-            onPressed: _toggleBookmark,
-          ),
-          if (_cfg.hintsAllowed)
-            IconButton(
-              tooltip: 'Show hint',
-              icon: const Icon(Icons.lightbulb_outline),
-              onPressed: canHint ? _showHint : null,
+
+    final showSkip = !last && (awaitingSubmit || (!_immediate && !answered));
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
+      decoration: BoxDecoration(
+        color: theme.scaffoldBackgroundColor,
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 10, offset: const Offset(0, -2))],
+      ),
+      child: Readable(
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          GradientButton(label: label, icon: icon, onPressed: action),
+          const SizedBox(height: 4),
+          Row(children: [
+            TextButton.icon(
+              onPressed: _index == 0 ? null : () => _show(_index - 1),
+              icon: const Icon(Icons.chevron_left),
+              label: const Text('Previous'),
             ),
-          if (_immediate && !last && (result == null || result == AttemptResult.review))
-            IconButton(
-              tooltip: 'Skip for now',
-              icon: const Icon(Icons.redo),
-              onPressed: () => _show(_index + 1),
-            ),
-          const Spacer(),
-          primary,
-          if (!_immediate || last)
-            const SizedBox.shrink()
-          else
-            IconButton(
-              tooltip: 'Submit the whole quiz',
-              icon: const Icon(Icons.flag_outlined),
-              onPressed: () => _finish(),
-            ),
+            const Spacer(),
+            Text('${_results.length}/${_items.length} answered',
+                style: theme.textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant)),
+            const Spacer(),
+            if (showSkip)
+              TextButton(
+                onPressed: () => _show(_index + 1),
+                child: const Row(mainAxisSize: MainAxisSize.min, children: [
+                  Text('Skip'),
+                  SizedBox(width: 4),
+                  Icon(Icons.chevron_right, size: 20),
+                ]),
+              )
+            else
+              const SizedBox(width: 88),
+          ]),
         ]),
       ),
     );

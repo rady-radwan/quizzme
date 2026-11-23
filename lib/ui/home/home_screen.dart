@@ -86,8 +86,8 @@ class HomeScreen extends StatelessWidget {
         Row(children: [
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('Quiz me', style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800)),
-              const SizedBox(height: 2),
+              const AppLogo(size: 44),
+              const SizedBox(height: 6),
               Text(msg, style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
             ]),
           ),
@@ -163,6 +163,14 @@ class HomeScreen extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Center(
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
+              child: Image.asset('assets/branding/logo.png', height: 150),
+            ),
+          ),
+          const SizedBox(height: 16),
           Text('Welcome to Quiz me', style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 8),
           const Text('Organise what you learn into subjects and question banks, import your '

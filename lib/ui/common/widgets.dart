@@ -446,3 +446,148 @@ class Readable extends StatelessWidget {
         child: ConstrainedBox(constraints: BoxConstraints(maxWidth: maxWidth), child: child),
       );
 }
+
+
+/// The Quiz me logo: graduation-cap emblem with "Quiz" + orange "me".
+class AppLogo extends StatelessWidget {
+  const AppLogo({super.key, this.size = 32, this.showText = true});
+  final double size;
+  final bool showText;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final dark = scheme.brightness == Brightness.dark;
+    return Semantics(
+      label: 'Quiz me',
+      child: ExcludeSemantics(
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          Image.asset('assets/branding/emblem.png', width: size, height: size, filterQuality: FilterQuality.medium),
+          if (showText) ...[
+            SizedBox(width: size * 0.22),
+            Text.rich(
+              TextSpan(children: [
+                TextSpan(text: 'Quiz ', style: TextStyle(color: dark ? Colors.white : brandNavy)),
+                const TextSpan(text: 'me', style: TextStyle(color: brandOrange)),
+              ]),
+              style: TextStyle(fontSize: size * 0.72, fontWeight: FontWeight.w800, letterSpacing: -0.3),
+            ),
+          ],
+        ]),
+      ),
+    );
+  }
+}
+
+/// Large primary action with the app's gradient (primary -> tertiary).
+class GradientButton extends StatelessWidget {
+  const GradientButton({super.key, required this.label, required this.onPressed, this.icon, this.height = 56});
+  final String label;
+  final VoidCallback? onPressed;
+  final IconData? icon;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final enabled = onPressed != null;
+    final colors = enabled
+        ? [scheme.primary, Color.lerp(scheme.primary, scheme.tertiary, 0.75)!]
+        : [scheme.onSurface.withValues(alpha: 0.12), scheme.onSurface.withValues(alpha: 0.12)];
+    final fg = enabled ? scheme.onPrimary : scheme.onSurface.withValues(alpha: 0.38);
+    return Semantics(
+      button: true,
+      enabled: enabled,
+      child: Container(
+        height: height,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(colors: colors),
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: enabled
+              ? [BoxShadow(color: scheme.primary.withValues(alpha: 0.30), blurRadius: 16, offset: const Offset(0, 6))]
+              : null,
+        ),
+        child: Material(
+          type: MaterialType.transparency,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(18),
+            onTap: onPressed,
+            child: Center(
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                if (icon != null) ...[Icon(icon, color: fg), const SizedBox(width: 10)],
+                Text(label, style: TextStyle(color: fg, fontSize: 18, fontWeight: FontWeight.w700)),
+              ]),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Thin rounded progress bar filled with the app gradient.
+class GradientProgressBar extends StatelessWidget {
+  const GradientProgressBar({super.key, required this.value, this.height = 8});
+  final double value;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(height),
+      child: Container(
+        height: height,
+        color: scheme.surfaceContainerHighest,
+        alignment: AlignmentDirectional.centerStart,
+        child: FractionallySizedBox(
+          widthFactor: value.clamp(0.0, 1.0),
+          heightFactor: 1,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(colors: [Color.lerp(scheme.primary, scheme.tertiary, 0.75)!, scheme.primary]),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Circular ring with a label inside (progress percentage or countdown).
+class ProgressRing extends StatelessWidget {
+  const ProgressRing({super.key, required this.value, required this.label, this.size = 64, this.color, this.semanticLabel});
+  final double value;
+  final String label;
+  final double size;
+  final Color? color;
+  final String? semanticLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Semantics(
+      label: semanticLabel ?? label,
+      child: ExcludeSemantics(
+        child: SizedBox(
+          width: size,
+          height: size,
+          child: Stack(alignment: Alignment.center, children: [
+            SizedBox(
+              width: size,
+              height: size,
+              child: CircularProgressIndicator(
+                value: value.clamp(0.0, 1.0),
+                strokeWidth: size * 0.09,
+                strokeCap: StrokeCap.round,
+                backgroundColor: scheme.surfaceContainerHighest,
+                color: color ?? scheme.primary,
+              ),
+            ),
+            Text(label, style: TextStyle(fontSize: size * 0.24, fontWeight: FontWeight.w800)),
+          ]),
+        ),
+      ),
+    );
+  }
+}

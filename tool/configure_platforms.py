@@ -30,6 +30,9 @@ def patch_manifest():
         return
     s = f.read_text()
     s = re.sub(r'android:label="[^"]*"', 'android:label="Quiz me"', s, count=1)
+    if 'android:roundIcon' not in s:
+        s = s.replace('android:icon="@mipmap/ic_launcher"',
+                      'android:icon="@mipmap/ic_launcher"\n        android:roundIcon="@mipmap/ic_launcher_round"', 1)
     if 'android.permission.POST_NOTIFICATIONS' not in s:
         perms = ('    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>\n'
                  '    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>\n')
@@ -136,7 +139,28 @@ def patch_windows():
     print('patched', f.relative_to(ROOT))
 
 
+def copy_branding():
+    """Copies the Quiz me launcher icons (generated from the logo) into the
+    platform folders, replacing the default Flutter icons."""
+    import shutil
+    src = ROOT / 'tool/branding/android/res'
+    dst = ROOT / 'android/app/src/main/res'
+    if src.exists() and dst.exists():
+        for f in src.rglob('*'):
+            if f.is_file():
+                target = dst / f.relative_to(src)
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(f, target)
+        print('copied Android launcher icons')
+    ico = ROOT / 'tool/branding/app_icon.ico'
+    win = ROOT / 'windows/runner/resources/app_icon.ico'
+    if ico.exists() and win.parent.exists():
+        shutil.copyfile(ico, win)
+        print('copied Windows icon')
+
+
 def main():
+    copy_branding()
     patch_manifest()
     kts = ROOT / 'android/app/build.gradle.kts'
     groovy = ROOT / 'android/app/build.gradle'

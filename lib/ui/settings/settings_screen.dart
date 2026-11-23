@@ -511,6 +511,7 @@ class SettingsScreen extends StatelessWidget {
               context: context,
               applicationName: 'Quiz me',
               applicationVersion: appVersion,
+              applicationIcon: Image.asset('assets/branding/emblem.png', width: 56, height: 56),
               applicationLegalese: 'Personal learning, quiz and knowledge-retention app.',
               children: const [
                 SizedBox(height: 12),

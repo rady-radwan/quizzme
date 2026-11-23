@@ -53,7 +53,7 @@ enum LayoutDirectionPref {
 class AppSettings {
   const AppSettings({
     this.theme = AppTheme.system,
-    this.accentColor = 0xFF3F51B5,
+    this.accentColor = 0xFF1E5BD6,
     this.useCustomAccent = false,
     this.font = AppFont.system,
     this.textScale = 1.0,
