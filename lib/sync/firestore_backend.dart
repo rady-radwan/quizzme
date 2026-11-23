@@ -233,7 +233,7 @@ class FirestoreBackend {
     do {
       final uri = Uri.parse('$_base/$collection').replace(queryParameters: {
         'pageSize': '300',
-        'mask.fieldPaths': '__none__',
+        'mask.fieldPaths': 'chunks',
         if (page != null) 'pageToken': page,
       });
       final r = await _send((h) => _http.get(uri, headers: h));

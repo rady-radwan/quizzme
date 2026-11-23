@@ -31,6 +31,7 @@ class SettingsScreen extends StatelessWidget {
             children: [
               Readable(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                  ..._account(context),
                   ..._appearance(context, s, set),
                   ..._quiz(context, s, set),
                   ..._learning(context, s, set),
@@ -44,6 +45,37 @@ class SettingsScreen extends StatelessWidget {
         },
       ),
     );
+  }
+
+  // ---------------- Account ----------------
+
+  List<Widget> _account(BuildContext context) {
+    final sync = AppServices.I.sync;
+    final scheme = Theme.of(context).colorScheme;
+    Widget tile() {
+      final on = sync?.enabled == true;
+      final problem = on && sync?.error != null;
+      return ListTile(
+        leading: CircleAvatar(
+          backgroundColor: scheme.primaryContainer,
+          foregroundColor: scheme.onPrimaryContainer,
+          child: Icon(on ? Icons.cloud_done_outlined : Icons.account_circle_outlined),
+        ),
+        title: Text(on ? (sync?.email ?? 'Signed in') : 'Account & sync'),
+        subtitle: Text(!on
+            ? 'Sign in to keep your phone and PC in sync'
+            : problem
+                ? 'Sync problem — tap for details'
+                : (sync!.busy ? 'Syncing…' : 'Sync is on')),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: () => Navigator.push(context, MaterialPageRoute<void>(builder: (_) => const SyncScreen())),
+      );
+    }
+
+    return [
+      const SectionHeader('Account'),
+      Card(child: sync == null ? tile() : ListenableBuilder(listenable: sync, builder: (context, child) => tile())),
+    ];
   }
 
   // ---------------- Appearance ----------------
@@ -417,14 +449,6 @@ class SettingsScreen extends StatelessWidget {
                 if (context.mounted) showErrorDialog(context, 'Export failed', '$e');
               }
             },
-          ),
-          ListTile(
-            leading: const Icon(Icons.cloud_sync_outlined),
-            title: const Text('Account & sync'),
-            subtitle: Text(svc.sync?.enabled == true
-                ? 'Signed in${svc.sync?.email == null ? '' : ' as ${svc.sync!.email}'}'
-                : 'Sign in to keep your phone and PC in sync'),
-            onTap: () => Navigator.push(context, MaterialPageRoute<void>(builder: (_) => const SyncScreen())),
           ),
           ListTile(
             leading: const Icon(Icons.backup_outlined),

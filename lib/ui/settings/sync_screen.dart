@@ -58,7 +58,14 @@ class _SyncScreenState extends State<SyncScreen> {
         showMessage(context, _creating ? 'Account created. Sync is on.' : 'Signed in. Sync is on.');
       }
     } catch (e) {
-      if (mounted) showErrorDialog(context, _creating ? 'Could not create the account' : 'Could not sign in', '$e');
+      if (!mounted) return;
+      if (sync.signedIn) {
+        // The account works; only the first sync failed (it retries automatically).
+        showErrorDialog(context, _creating ? 'Account created, but sync failed' : 'Signed in, but sync failed',
+            '$e\n\nYou can try again with "Sync now".');
+      } else {
+        showErrorDialog(context, _creating ? 'Could not create the account' : 'Could not sign in', '$e');
+      }
     } finally {
       if (mounted) setState(() => _working = false);
     }
