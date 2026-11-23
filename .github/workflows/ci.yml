@@ -1,5 +1,5 @@
-# Continuous integration: static analysis, automated tests and an installable
-# Android APK (uploaded as a build artifact) for every push to main.
+# Continuous integration: static analysis, automated tests, an installable
+# Android APK and a Windows installer + portable zip for every push to main.
 #
 # On the very first run the platform folders (android/, ios/, windows/) are
 # generated with `flutter create` and committed back to main.
@@ -151,3 +151,88 @@ jobs:
           for s in "${{ steps.pub.outcome }}" "${{ steps.analyze.outcome }}" "${{ steps.test.outcome }}" "${{ steps.apk.outcome }}"; do
             if [ "$s" != "success" ]; then echo "A required step did not succeed ($s)"; exit 1; fi
           done
+
+  windows:
+    name: Build Windows app
+    runs-on: windows-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    env:
+      PYTHONUTF8: '1'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Generate Windows platform folder if missing
+        run: |
+          mkdir -p "$RUNNER_TEMP/out"
+          if [ ! -d windows ]; then
+            flutter create --org com.radyradwan --project-name quiz_me --platforms=windows . 2>&1 | tail -n 20
+            rm -f test/widget_test.dart
+          fi
+          python tool/configure_platforms.py
+
+      - name: Build
+        id: build
+        continue-on-error: true
+        run: |
+          flutter pub get
+          flutter build windows --release 2>&1 | tee "$RUNNER_TEMP/out/windows-build.txt"
+
+      - name: Package (portable zip + installer)
+        id: package
+        if: steps.build.outcome == 'success'
+        continue-on-error: true
+        run: |
+          REL=build/windows/x64/runner/Release
+          ls -la "$REL"
+          # App-local Visual C++ runtime, so the app starts on PCs without the redistributable.
+          for d in msvcp140.dll vcruntime140.dll vcruntime140_1.dll; do
+            cp "/c/Windows/System32/$d" "$REL/" || true
+          done
+          VERSION=$(grep -E '^version:' pubspec.yaml | sed -E 's/version: *([0-9.]+).*/\1/')
+          OUT="$RUNNER_TEMP/out"
+          cp -r "$REL" "$OUT/Quiz me"
+          (cd "$OUT" && 7z a -tzip -mx=9 QuizMe-Windows-portable.zip "Quiz me" > /dev/null)
+          rm -rf "$OUT/Quiz me"
+          ISCC="/c/Program Files (x86)/Inno Setup 6/ISCC.exe"
+          if [ ! -f "$ISCC" ]; then choco install innosetup -y --no-progress > /dev/null; fi
+          SRC=$(cygpath -w "$PWD/$REL")
+          "$ISCC" "/DAppVersion=$VERSION" "/DSourceDir=$SRC" "/O$(cygpath -w "$OUT")" tool/windows/installer.iss
+          ls -la "$OUT"
+
+      - name: Upload Windows build
+        if: steps.package.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: quiz-me-windows-${{ github.run_number }}
+          path: |
+            ${{ runner.temp }}/out/QuizMe-Setup.exe
+            ${{ runner.temp }}/out/QuizMe-Windows-portable.zip
+          retention-days: 30
+
+      - name: Publish to the windows branch
+        # Latest Windows build (or its build log when it failed), force-pushed without history.
+        if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          D="$RUNNER_TEMP/out"
+          printf 'Commit: %s\nRun: %s\nBuild: %s\nPackage: %s\n' "${{ github.sha }}" "${{ github.run_number }}" \
+            "${{ steps.build.outcome }}" "${{ steps.package.outcome }}" > "$D/BUILD.txt"
+          if [ -f "$D/windows-build.txt" ]; then tail -n 200 "$D/windows-build.txt" > "$D/build_tail.txt"; rm "$D/windows-build.txt"; fi
+          cd "$D"
+          git init -q -b windows
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add . && git commit -q -m "Windows build for ${{ github.sha }}"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" windows
+
+      - name: Fail if the Windows build failed
+        if: always()
+        run: |
+          if [ "${{ steps.build.outcome }}" != "success" ] || [ "${{ steps.package.outcome }}" != "success" ]; then exit 1; fi

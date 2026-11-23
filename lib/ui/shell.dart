@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
+import 'common/desktop.dart';
+import 'common/widgets.dart';
 
 import 'banks/banks_screen.dart';
 import 'home/home_screen.dart';
@@ -39,7 +43,11 @@ class HomeShellState extends State<HomeShell> {
       const ProgressScreen(),
       const SettingsScreen(),
     ];
-    final wide = MediaQuery.sizeOf(context).width >= 840;
+    final width = MediaQuery.sizeOf(context).width;
+    // Windows/desktop: side navigation as soon as the window is not tiny,
+    // with text labels beside the icons in large windows.
+    final wide = width >= 840 || (isDesktop && width >= 600);
+    final extended = isDesktop && width >= 1180;
     final body = IndexedStack(index: _index, children: pages);
     return PopScope(
       // Android back: from another tab go to Home first, then leave the app.
@@ -47,13 +55,28 @@ class HomeShellState extends State<HomeShell> {
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop && _index != 0) setState(() => _index = 0);
       },
-      child: Scaffold(
+      child: CallbackShortcuts(
+        bindings: {
+          for (var i = 0; i < _destinations.length; i++)
+            SingleActivator(LogicalKeyboardKey(LogicalKeyboardKey.digit1.keyId + i), control: true): () => select(i),
+        },
+        child: Focus(
+          autofocus: true,
+          child: Scaffold(
         body: wide
             ? Row(children: [
                 NavigationRail(
                   selectedIndex: _index,
                   onDestinationSelected: select,
-                  labelType: NavigationRailLabelType.all,
+                  extended: extended,
+                  minExtendedWidth: 210,
+                  labelType: extended ? NavigationRailLabelType.none : NavigationRailLabelType.all,
+                  leading: isDesktop
+                      ? Padding(
+                          padding: const EdgeInsets.fromLTRB(8, 12, 8, 20),
+                          child: AppLogo(size: extended ? 40 : 36, showText: extended),
+                        )
+                      : null,
                   destinations: [
                     for (final d in _destinations)
                       NavigationRailDestination(icon: d.icon, selectedIcon: d.selectedIcon, label: Text(d.label)),
@@ -70,6 +93,8 @@ class HomeShellState extends State<HomeShell> {
                 onDestinationSelected: select,
                 destinations: _destinations,
               ),
+          ),
+        ),
       ),
     );
   }

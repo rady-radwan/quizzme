@@ -1,12 +1,14 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../app/services.dart';
 import '../../app/theme.dart';
 import '../../core/grading.dart';
 import '../../core/models.dart';
 import '../../data/session_repository.dart';
+import '../common/desktop.dart';
 import '../common/widgets.dart';
 import '../questions/notes_section.dart';
 import 'answer_widgets.dart';
@@ -75,6 +77,7 @@ class _QuizPlayerScreenState extends State<QuizPlayerScreen> with WidgetsBinding
     _persistCursor();
     _svc.speech.stopSpeaking();
     _textCtrl.dispose();
+    _keys.dispose();
     super.dispose();
   }
 
@@ -164,6 +167,9 @@ class _QuizPlayerScreenState extends State<QuizPlayerScreen> with WidgetsBinding
     _flushPending();
     _recordDuration();
     setState(() => _index = i);
+    // Keep keyboard shortcuts working after a text field of the previous
+    // question is removed from the tree.
+    _keys.requestFocus();
     _questionShownAt = DateTime.now();
     final r = _responses[i];
     _textCtrl.text = (r?.text == 'revealed' ? '' : r?.text) ?? '';
@@ -388,6 +394,126 @@ class _QuizPlayerScreenState extends State<QuizPlayerScreen> with WidgetsBinding
     return false;
   }
 
+  // ---------------- Keyboard (Windows / hardware keyboards) ----------------
+
+  final FocusNode _keys = FocusNode(debugLabel: 'quiz-keys');
+
+  /// Action of the big bottom button for the current question, or null.
+  VoidCallback? _primaryAction(Question q, QuestionResponse response, AttemptResult? result) {
+    final last = _index == _items.length - 1;
+    if (_immediate) {
+      final awaitingSubmit = result == null || result == AttemptResult.review;
+      if (awaitingSubmit) return isAnswered(q, response) && !_busy ? _submit : null;
+      return _busy ? null : _next;
+    }
+    return last ? () => _finish() : () => _show(_index + 1);
+  }
+
+  KeyEventResult _onKey(FocusNode node, KeyEvent e) {
+    if (e is! KeyDownEvent && e is! KeyRepeatEvent) return KeyEventResult.ignored;
+    if (_session == null || _finishing || _items.isEmpty) return KeyEventResult.ignored;
+    final route = ModalRoute.of(context);
+    if (route != null && !route.isCurrent) return KeyEventResult.ignored;
+    final q = _q;
+    if (q == null) return KeyEventResult.ignored;
+    final k = e.logicalKey;
+    final ctrl = HardwareKeyboard.instance.isControlPressed;
+    final pos = _item.position;
+    final response = _responses[pos] ?? QuestionResponse();
+
+    if (k == LogicalKeyboardKey.f1) {
+      showShortcutsDialog(context, 'Quiz shortcuts', quizShortcuts);
+      return KeyEventResult.handled;
+    }
+    if (k == LogicalKeyboardKey.escape) {
+      if (isEditingText) {
+        _keys.requestFocus();
+      } else {
+        Navigator.of(context).maybePop();
+      }
+      return KeyEventResult.handled;
+    }
+    if (ctrl) {
+      if (k == LogicalKeyboardKey.keyB) {
+        _toggleBookmark();
+        return KeyEventResult.handled;
+      }
+      if (k == LogicalKeyboardKey.keyG) {
+        _showGrid();
+        return KeyEventResult.handled;
+      }
+      if (k == LogicalKeyboardKey.keyR) {
+        _svc.speech.speak(_speechText(q));
+        return KeyEventResult.handled;
+      }
+      if (isEnterKey(k)) {
+        _finish();
+        return KeyEventResult.handled;
+      }
+      return KeyEventResult.ignored;
+    }
+    if (!noCommandModifier) return KeyEventResult.ignored;
+    final typing = isEditingText;
+
+    if (isEnterKey(k)) {
+      if (e is KeyRepeatEvent) return KeyEventResult.handled;
+      final action = _primaryAction(q, response, _results[pos]);
+      if (action == null) return typing ? KeyEventResult.ignored : KeyEventResult.handled;
+      action();
+      return KeyEventResult.handled;
+    }
+    // Everything below is a single printable key: leave it to the text field.
+    if (typing) return KeyEventResult.ignored;
+
+    if (k == LogicalKeyboardKey.arrowRight || k == LogicalKeyboardKey.arrowLeft) {
+      final rtl = Directionality.of(context) == TextDirection.rtl;
+      final forward = (k == LogicalKeyboardKey.arrowRight) != rtl;
+      if (forward) {
+        final revealedNow = _immediate && _results.containsKey(pos) && _results[pos] != AttemptResult.review;
+        if (revealedNow) {
+          _next();
+        } else if (_index < _items.length - 1) {
+          _show(_index + 1);
+        }
+      } else if (_index > 0) {
+        _show(_index - 1);
+      }
+      return KeyEventResult.handled;
+    }
+    if (q.type.usesChoices && !_locked && !_busy) {
+      final count = _item.optionOrder.length > q.options.length ? _item.optionOrder.length : q.options.length;
+      final hintKey = k == LogicalKeyboardKey.keyH && count < 8;
+      final i = hintKey ? null : optionIndexForKey(k);
+      if (i != null) {
+        final byId = {for (final o in q.options) o.id: o};
+        final ordered = [
+          for (final id in _item.optionOrder)
+            if (byId.containsKey(id)) id,
+          for (final o in q.options)
+            if (!_item.optionOrder.contains(o.id)) o.id,
+        ];
+        if (i >= ordered.length) return KeyEventResult.handled;
+        final id = ordered[i];
+        final sel = {...response.selected};
+        if (q.type == QuestionType.multiple) {
+          sel.contains(id) ? sel.remove(id) : sel.add(id);
+        } else {
+          sel
+            ..clear()
+            ..add(id);
+        }
+        _onChanged(response.copyWith(selected: sel));
+        return KeyEventResult.handled;
+      }
+    }
+    if (k == LogicalKeyboardKey.keyH) {
+      final canHint = _cfg.hintsAllowed && (q.hint ?? '').isNotEmpty && !_hintShown.contains(pos) && !_locked;
+      if (canHint) _showHint();
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
+  }
+
   // ---------------- UI ----------------
 
   @override
@@ -411,7 +537,11 @@ class _QuizPlayerScreenState extends State<QuizPlayerScreen> with WidgetsBinding
         final leave = await _confirmLeave();
         if (leave && context.mounted) Navigator.of(context).pop();
       },
-      child: Scaffold(
+      child: Focus(
+        focusNode: _keys,
+        autofocus: true,
+        onKeyEvent: _onKey,
+        child: Scaffold(
         appBar: AppBar(
           centerTitle: true,
           leading: IconButton(
@@ -421,6 +551,12 @@ class _QuizPlayerScreenState extends State<QuizPlayerScreen> with WidgetsBinding
           ),
           title: const AppLogo(size: 30, useAmbientColor: true),
           actions: [
+            if (isDesktop)
+              IconButton(
+                tooltip: 'Keyboard shortcuts (F1)',
+                icon: const Icon(Icons.keyboard_outlined),
+                onPressed: () => showShortcutsDialog(context, 'Quiz shortcuts', quizShortcuts),
+              ),
             if (q != null)
               IconButton(
                 tooltip: bookmarked ? 'Remove bookmark' : 'Bookmark',
@@ -522,6 +658,7 @@ class _QuizPlayerScreenState extends State<QuizPlayerScreen> with WidgetsBinding
                       _bottomBar(context, q, response, result, theme),
                     ]),
                   ),
+        ),
       ),
     );
   }
@@ -690,21 +827,18 @@ class _QuizPlayerScreenState extends State<QuizPlayerScreen> with WidgetsBinding
 
     String label;
     IconData icon;
-    VoidCallback? action;
+    final action = _primaryAction(q, response, result);
     if (_immediate) {
       if (awaitingSubmit) {
         label = 'Check Answer';
         icon = Icons.check_circle_outline;
-        action = answered && !_busy ? _submit : null;
       } else {
         label = last ? 'Finish Quiz' : 'Next Question';
         icon = last ? Icons.flag_outlined : Icons.arrow_forward_rounded;
-        action = _busy ? null : _next;
       }
     } else {
       label = last ? 'Submit Quiz' : 'Next';
       icon = last ? Icons.flag_outlined : Icons.arrow_forward_rounded;
-      action = last ? () => _finish() : () => _show(_index + 1);
     }
 
     final showSkip = !last && (awaitingSubmit || (!_immediate && !answered));

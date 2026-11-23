@@ -130,13 +130,44 @@ def patch_ios():
 
 
 def patch_windows():
-    f = ROOT / 'windows/runner/main.cpp'
-    if not f.exists():
+    win = ROOT / 'windows'
+    if not win.exists():
         return
-    s = f.read_text()
-    s = s.replace('window.Create(L"quiz_me"', 'window.Create(L"Quiz me"')
-    f.write_text(s)
-    print('patched', f.relative_to(ROOT))
+    main_cpp = win / 'runner/main.cpp'
+    if main_cpp.exists():
+        s = main_cpp.read_text()
+        s = s.replace('window.Create(L"quiz_me"', 'window.Create(L"Quiz me"')
+        s = s.replace('Win32Window::Size size(1280, 720);', 'Win32Window::Size size(1280, 860);')
+        main_cpp.write_text(s)
+    fw = win / 'runner/flutter_window.cpp'
+    if fw.exists():
+        s = fw.read_text()
+        if 'WM_GETMINMAXINFO' not in s and 'case WM_FONTCHANGE:' in s:
+            s = s.replace('    case WM_FONTCHANGE:', """    case WM_GETMINMAXINFO: {
+      // quiz-me-config: keep the window large enough for the layout.
+      const double scale = FlutterDesktopGetDpiForMonitor(
+          MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST)) / 96.0;
+      auto* info = reinterpret_cast<MINMAXINFO*>(lparam);
+      info->ptMinTrackSize.x = static_cast<LONG>(760 * scale);
+      info->ptMinTrackSize.y = static_cast<LONG>(560 * scale);
+      return 0;
+    }
+    case WM_FONTCHANGE:""", 1)
+        fw.write_text(s)
+    cm = win / 'CMakeLists.txt'
+    if cm.exists():
+        s = cm.read_text()
+        s = s.replace('set(BINARY_NAME "quiz_me")', 'set(BINARY_NAME "QuizMe")')
+        cm.write_text(s)
+    rc = win / 'runner/Runner.rc'
+    if rc.exists():
+        s = rc.read_text()
+        s = s.replace('VALUE "FileDescription", "quiz_me"', 'VALUE "FileDescription", "Quiz me"')
+        s = s.replace('VALUE "ProductName", "quiz_me"', 'VALUE "ProductName", "Quiz me"')
+        s = s.replace('VALUE "OriginalFilename", "quiz_me.exe"', 'VALUE "OriginalFilename", "QuizMe.exe"')
+        s = s.replace('VALUE "CompanyName", "com.radyradwan"', 'VALUE "CompanyName", "Rady Radwan"')
+        rc.write_text(s)
+    print('patched windows runner')
 
 
 def copy_branding():

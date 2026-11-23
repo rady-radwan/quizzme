@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../app/services.dart';
 import '../../core/grading.dart';
 import '../../core/models.dart';
 import '../../data/session_repository.dart';
+import '../common/desktop.dart';
 import '../common/widgets.dart';
 import 'question_media.dart';
 import 'results_screen.dart';
@@ -46,6 +48,7 @@ class _FlashcardScreenState extends State<FlashcardScreen> {
       _svc.sessions.saveCursor(s.id, _index, _elapsedBase + _watch.elapsedMilliseconds);
     }
     _svc.speech.stopSpeaking();
+    _keys.dispose();
     super.dispose();
   }
 
@@ -131,6 +134,56 @@ class _FlashcardScreenState extends State<FlashcardScreen> {
     }
   }
 
+  final FocusNode _keys = FocusNode(debugLabel: 'flashcard-keys');
+
+  void _advance() {
+    final n = _nextUnrated();
+    if (n == null) {
+      _finish();
+    } else {
+      _go(n);
+    }
+  }
+
+  KeyEventResult _onKey(FocusNode node, KeyEvent e) {
+    if (e is! KeyDownEvent) return KeyEventResult.ignored;
+    if (_session == null || _items.isEmpty || _finishing || !noCommandModifier) return KeyEventResult.ignored;
+    final route = ModalRoute.of(context);
+    if (route != null && !route.isCurrent) return KeyEventResult.ignored;
+    final k = e.logicalKey;
+    final rated = _rated.containsKey(_items[_index].position);
+    if (k == LogicalKeyboardKey.f1) {
+      showShortcutsDialog(context, 'Flashcard shortcuts', flashcardShortcuts);
+      return KeyEventResult.handled;
+    }
+    if (k == LogicalKeyboardKey.escape) {
+      Navigator.of(context).maybePop();
+      return KeyEventResult.handled;
+    }
+    if (k == LogicalKeyboardKey.space || isEnterKey(k)) {
+      if (!_revealed) {
+        setState(() => _revealed = true);
+      } else if (rated) {
+        _advance();
+      }
+      return KeyEventResult.handled;
+    }
+    if (k == LogicalKeyboardKey.arrowRight || k == LogicalKeyboardKey.arrowLeft) {
+      final rtl = Directionality.of(context) == TextDirection.rtl;
+      final forward = (k == LogicalKeyboardKey.arrowRight) != rtl;
+      if (forward && _index < _items.length - 1) _go(_index + 1);
+      if (!forward && _index > 0) _go(_index - 1);
+      return KeyEventResult.handled;
+    }
+    final i = optionIndexForKey(k);
+    if (i != null && i < Confidence.values.length && _revealed && !rated && k.keyLabel.length == 1 &&
+        RegExp(r'[1-4]').hasMatch(k.keyLabel)) {
+      _rate(Confidence.values[i]);
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_session == null) return const Scaffold(body: Center(child: CircularProgressIndicator()));
@@ -158,7 +211,9 @@ class _FlashcardScreenState extends State<FlashcardScreen> {
           Padding(padding: const EdgeInsets.only(bottom: 4), child: ContentText('• ${o.text}')),
       ],
       const SizedBox(height: 24),
-      Center(child: Text('Tap to reveal the answer', style: theme.textTheme.bodySmall)),
+      Center(
+          child: Text(isDesktop ? 'Click or press Space to reveal the answer' : 'Tap to reveal the answer',
+              style: theme.textTheme.bodySmall)),
     ]);
 
     final back = Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
@@ -178,10 +233,20 @@ class _FlashcardScreenState extends State<FlashcardScreen> {
       Text(q.text, style: theme.textTheme.bodySmall, maxLines: 3, overflow: TextOverflow.ellipsis),
     ]);
 
-    return Scaffold(
+    return Focus(
+      focusNode: _keys,
+      autofocus: true,
+      onKeyEvent: _onKey,
+      child: Scaffold(
       appBar: AppBar(
         title: Text('Card ${_index + 1} of ${_items.length}'),
         actions: [
+          if (isDesktop)
+            IconButton(
+              tooltip: 'Keyboard shortcuts (F1)',
+              icon: const Icon(Icons.keyboard_outlined),
+              onPressed: () => showShortcutsDialog(context, 'Flashcard shortcuts', flashcardShortcuts),
+            ),
           TextButton(onPressed: _finishing ? null : _finish, child: const Text('Finish')),
         ],
       ),
@@ -250,14 +315,7 @@ class _FlashcardScreenState extends State<FlashcardScreen> {
                           ? Row(children: [
                               Expanded(child: Text('Rated: ${rated.label}', textAlign: TextAlign.center)),
                               FilledButton(
-                                onPressed: () {
-                                  final n = _nextUnrated();
-                                  if (n == null) {
-                                    _finish();
-                                  } else {
-                                    _go(n);
-                                  }
-                                },
+                                onPressed: _advance,
                                 child: const Text('Next card'),
                               ),
                             ])
@@ -289,6 +347,7 @@ class _FlashcardScreenState extends State<FlashcardScreen> {
                 ),
               ]),
             ),
+      ),
     );
   }
 }
