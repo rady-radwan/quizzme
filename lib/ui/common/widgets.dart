@@ -328,7 +328,7 @@ class LabeledProgress extends StatelessWidget {
             minHeight: 8,
             color: color,
             semanticsLabel: label,
-            semanticsValue: '${(value * 100).round()} percent',
+            semanticsValue: '${(value * 100).round()}',
           ),
         ),
       ],

@@ -681,7 +681,7 @@ class _FontTile extends StatelessWidget {
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text(font.label, style: TextStyle(fontFamily: font.family, fontSize: 17, fontWeight: FontWeight.w700)),
-                Text('Tap to choose from ${AppFont.values.length} fonts',
+                Text('Choose from ${AppFont.values.length} fonts',
                     style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant)),
               ]),
             ),

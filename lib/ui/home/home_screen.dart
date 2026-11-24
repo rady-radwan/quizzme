@@ -60,23 +60,36 @@ class HomeScreen extends StatelessWidget {
     final wide = width >= 840 || (isDesktop && width >= 600);
     return Scaffold(
       // On wide screens the side menu already shows the logo.
+      // Wide screens: the side menu shows the logo, the top bar greets.
       appBar: wide
-          ? null
+          ? AppBar(
+              toolbarHeight: 84,
+              titleSpacing: 28,
+              title: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(_greeting(), style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800)),
+                const SizedBox(height: 2),
+                Opacity(
+                  opacity: 0.75,
+                  child: Text(_messages[DateTime.now().difference(DateTime(2024)).inDays % _messages.length],
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w400)),
+                ),
+              ]),
+            )
           : AppBar(
               centerTitle: true,
               toolbarHeight: 60,
               title: const AppLogo(size: 36, useAmbientColor: true),
             ),
       body: SafeArea(
-        top: wide,
+        top: false,
         child: Reloadable<_HomeData>(
           load: _load,
           builder: (context, d, reload) => RefreshIndicator(
             onRefresh: reload,
             child: ListView(
-              padding: EdgeInsets.fromLTRB(wide ? 28 : 16, wide ? 24 : 12, wide ? 28 : 16, 32),
+              padding: EdgeInsets.fromLTRB(wide ? 28 : 16, wide ? 16 : 12, wide ? 28 : 16, 32),
               children: [
-                Readable(maxWidth: 1240, child: _content(context, d)),
+                Readable(maxWidth: 1240, child: _content(context, d, wide)),
               ],
             ),
           ),
@@ -108,7 +121,7 @@ class HomeScreen extends StatelessWidget {
     ]);
   }
 
-  Widget _content(BuildContext context, _HomeData d) {
+  Widget _content(BuildContext context, _HomeData d, bool wide) {
     final svc = AppServices.I;
     final goal = svc.settings.value.dailyQuestionGoal;
     final today = d.dash.today.answered;
@@ -116,14 +129,13 @@ class HomeScreen extends StatelessWidget {
 
     if (d.dash.totalQuestions == 0) {
       return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        _header(context, d, msg),
-        const SizedBox(height: 18),
+        if (!wide) ...[_header(context, d, msg), const SizedBox(height: 18)],
         _welcome(context),
       ]);
     }
 
     final main = <Widget>[
-      _heroCard(context, today, goal),
+      _heroCard(context, today, goal, wide ? d.dash.currentStreak : 0),
       const SizedBox(height: 14),
       _statsRow(context, d.dash),
       if (d.active != null) ...[
@@ -152,15 +164,12 @@ class HomeScreen extends StatelessWidget {
     return LayoutBuilder(builder: (context, c) {
       if (c.maxWidth < 1000) {
         return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          _header(context, d, msg),
-          const SizedBox(height: 18),
+          if (!wide) ...[_header(context, d, msg), const SizedBox(height: 18)],
           ...main,
           ...side,
         ]);
       }
       return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        _header(context, d, msg),
-        const SizedBox(height: 20),
         Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Expanded(flex: 7, child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: main)),
           const SizedBox(width: 24),
@@ -217,7 +226,7 @@ class HomeScreen extends StatelessWidget {
   }
 
   /// Gradient hero: today's progress towards the daily goal.
-  Widget _heroCard(BuildContext context, int today, int goal) {
+  Widget _heroCard(BuildContext context, int today, int goal, int streak) {
     final scheme = Theme.of(context).colorScheme;
     final t = Theme.of(context).textTheme;
     final frac = goal <= 0 ? 1.0 : (today / goal).clamp(0.0, 1.0);
@@ -244,6 +253,10 @@ class HomeScreen extends StatelessWidget {
                   const Icon(Icons.auto_graph_rounded, color: Colors.white70, size: 20),
                   const SizedBox(width: 6),
                   Text("Today's learning", style: t.labelLarge?.copyWith(color: Colors.white70)),
+                  if (streak > 0) ...[
+                    const SizedBox(width: 10),
+                    _StreakBadge(days: streak, compact: true),
+                  ],
                 ]),
                 const SizedBox(height: 10),
                 Text.rich(
@@ -267,7 +280,7 @@ class HomeScreen extends StatelessWidget {
                     color: brandGold,
                     backgroundColor: Colors.white.withValues(alpha: 0.22),
                     semanticsLabel: 'Daily goal progress',
-                    semanticsValue: '${(frac * 100).round()} percent',
+                    semanticsValue: '${(frac * 100).round()}',
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -562,15 +575,16 @@ Color progressColor(BuildContext context, double f) =>
         Theme.of(context).colorScheme);
 
 class _StreakBadge extends StatelessWidget {
-  const _StreakBadge({required this.days});
+  const _StreakBadge({required this.days, this.compact = false});
   final int days;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
     return Tooltip(
       message: 'Study streak',
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        padding: EdgeInsets.symmetric(horizontal: compact ? 10 : 14, vertical: compact ? 4 : 8),
         decoration: BoxDecoration(
           gradient: const LinearGradient(colors: [Color(0xFFFF9A3C), Color(0xFFFF5F6D)]),
           borderRadius: BorderRadius.circular(30),

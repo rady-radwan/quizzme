@@ -88,4 +88,22 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
+
+  testWidgets('phone home renders without overflow', (tester) async {
+    await tester.runAsync(_loadFonts);
+    tester.view.physicalSize = const Size(412, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    late AppServices s;
+    await tester.runAsync(() async {
+      s = await openServices();
+      await SampleData.create(s.catalog, s.questions);
+      await s.settings.update(s.settings.value.copyWith(theme: AppTheme.dark, font: AppFont.inter));
+    });
+    AppServices.I = s;
+    await tester.pumpWidget(const RepaintBoundary(key: ValueKey('shot'), child: QuizMeApp()));
+    await _settle(tester);
+    await _save(tester, 'phone_home_dark');
+    expect(tester.takeException(), isNull);
+  });
 }
