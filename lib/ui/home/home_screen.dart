@@ -326,7 +326,7 @@ class HomeScreen extends StatelessWidget {
       _MiniStat(
         icon: Icons.track_changes_rounded,
         color: purple,
-        value: s.totalAttempts == 0 ? '—' : '${(s.accuracy * 100).round()}%',
+        value: s.accuracy == null ? '—' : '${(s.accuracy! * 100).round()}%',
         label: 'Accuracy',
       ),
     ];
