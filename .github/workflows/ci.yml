@@ -173,6 +173,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           mkdir -p reports && mv ./*.txt ./*.md reports/ 2>/dev/null || true
+          if [ -d "$GITHUB_WORKSPACE/build/screenshots" ]; then mkdir -p screenshots && cp "$GITHUB_WORKSPACE"/build/screenshots/*.png screenshots/ || true; fi
           git add . && git commit -q -m "CI report for ${{ github.sha }}"
           git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" ci-reports
 
