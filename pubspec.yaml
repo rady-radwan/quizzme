@@ -48,3 +48,126 @@ flutter:
   assets:
     - assets/templates/
     - assets/branding/
+    - assets/font_licenses/
+
+  fonts:
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter/Inter_400Regular.ttf
+        - asset: assets/fonts/Inter/Inter_600SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Inter/Inter_700Bold.ttf
+          weight: 700
+    - family: Roboto
+      fonts:
+        - asset: assets/fonts/Roboto/Roboto_400Regular.ttf
+        - asset: assets/fonts/Roboto/Roboto_600SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Roboto/Roboto_700Bold.ttf
+          weight: 700
+    - family: Poppins
+      fonts:
+        - asset: assets/fonts/Poppins/Poppins_400Regular.ttf
+        - asset: assets/fonts/Poppins/Poppins_600SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Poppins/Poppins_700Bold.ttf
+          weight: 700
+    - family: Nunito
+      fonts:
+        - asset: assets/fonts/Nunito/Nunito_400Regular.ttf
+        - asset: assets/fonts/Nunito/Nunito_600SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Nunito/Nunito_700Bold.ttf
+          weight: 700
+    - family: Lato
+      fonts:
+        - asset: assets/fonts/Lato/Lato_400Regular.ttf
+        - asset: assets/fonts/Lato/Lato_700Bold.ttf
+          weight: 700
+    - family: Open Sans
+      fonts:
+        - asset: assets/fonts/OpenSans/OpenSans_400Regular.ttf
+        - asset: assets/fonts/OpenSans/OpenSans_600SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/OpenSans/OpenSans_700Bold.ttf
+          weight: 700
+    - family: Montserrat
+      fonts:
+        - asset: assets/fonts/Montserrat/Montserrat_400Regular.ttf
+        - asset: assets/fonts/Montserrat/Montserrat_600SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Montserrat/Montserrat_700Bold.ttf
+          weight: 700
+    - family: Source Sans 3
+      fonts:
+        - asset: assets/fonts/SourceSans3/SourceSans3_400Regular.ttf
+        - asset: assets/fonts/SourceSans3/SourceSans3_600SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/SourceSans3/SourceSans3_700Bold.ttf
+          weight: 700
+    - family: DM Sans
+      fonts:
+        - asset: assets/fonts/DMSans/DMSans_400Regular.ttf
+        - asset: assets/fonts/DMSans/DMSans_600SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/DMSans/DMSans_700Bold.ttf
+          weight: 700
+    - family: Lexend
+      fonts:
+        - asset: assets/fonts/Lexend/Lexend_400Regular.ttf
+        - asset: assets/fonts/Lexend/Lexend_600SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Lexend/Lexend_700Bold.ttf
+          weight: 700
+    - family: Atkinson Hyperlegible
+      fonts:
+        - asset: assets/fonts/AtkinsonHyperlegible/AtkinsonHyperlegible_400Regular.ttf
+        - asset: assets/fonts/AtkinsonHyperlegible/AtkinsonHyperlegible_700Bold.ttf
+          weight: 700
+    - family: Merriweather
+      fonts:
+        - asset: assets/fonts/Merriweather/Merriweather_400Regular.ttf
+        - asset: assets/fonts/Merriweather/Merriweather_700Bold.ttf
+          weight: 700
+    - family: Lora
+      fonts:
+        - asset: assets/fonts/Lora/Lora_400Regular.ttf
+        - asset: assets/fonts/Lora/Lora_600SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Lora/Lora_700Bold.ttf
+          weight: 700
+    - family: Playfair Display
+      fonts:
+        - asset: assets/fonts/PlayfairDisplay/PlayfairDisplay_400Regular.ttf
+        - asset: assets/fonts/PlayfairDisplay/PlayfairDisplay_600SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/PlayfairDisplay/PlayfairDisplay_700Bold.ttf
+          weight: 700
+    - family: JetBrains Mono
+      fonts:
+        - asset: assets/fonts/JetBrainsMono/JetBrainsMono_400Regular.ttf
+        - asset: assets/fonts/JetBrainsMono/JetBrainsMono_600SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/JetBrainsMono/JetBrainsMono_700Bold.ttf
+          weight: 700
+    - family: Cairo
+      fonts:
+        - asset: assets/fonts/Cairo/Cairo_400Regular.ttf
+        - asset: assets/fonts/Cairo/Cairo_600SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Cairo/Cairo_700Bold.ttf
+          weight: 700
+    - family: Tajawal
+      fonts:
+        - asset: assets/fonts/Tajawal/Tajawal_400Regular.ttf
+        - asset: assets/fonts/Tajawal/Tajawal_500Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Tajawal/Tajawal_700Bold.ttf
+          weight: 700
+    - family: Noto Kufi Arabic
+      fonts:
+        - asset: assets/fonts/NotoKufiArabic/NotoKufiArabic_400Regular.ttf
+        - asset: assets/fonts/NotoKufiArabic/NotoKufiArabic_600SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/NotoKufiArabic/NotoKufiArabic_700Bold.ttf
+          weight: 700

@@ -47,20 +47,66 @@ class SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Padding(
-      padding: padding ?? const EdgeInsets.fromLTRB(4, 20, 4, 8),
+      padding: padding ?? const EdgeInsets.fromLTRB(2, 24, 2, 10),
       child: Row(
         children: [
+          Container(
+            width: 4,
+            height: 20,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [scheme.primary, Color.lerp(scheme.primary, scheme.tertiary, 0.8)!],
+              ),
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
+          const SizedBox(width: 10),
           Expanded(
             child: Semantics(
               header: true,
               child: Text(title,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleMedium
+                      ?.copyWith(fontWeight: FontWeight.w700, fontSize: 18, letterSpacing: -0.1)),
             ),
           ),
           if (action != null) action!,
         ],
       ),
+    );
+  }
+}
+
+/// A rounded, softly tinted square holding an icon (used for visual accents).
+class IconBadge extends StatelessWidget {
+  const IconBadge({super.key, required this.icon, required this.color, this.size = 44, this.filled = false});
+  final IconData icon;
+  final Color color;
+  final double size;
+  final bool filled;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        gradient: filled
+            ? LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [color, Color.lerp(color, Colors.black, 0.18)!],
+              )
+            : null,
+        color: filled ? null : color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(size * 0.32),
+      ),
+      child: Icon(icon, size: size * 0.52, color: filled ? Colors.white : color),
     );
   }
 }
@@ -77,17 +123,18 @@ class StatTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final c = color ?? scheme.primary;
     return Card(
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.md),
+          padding: const EdgeInsets.all(14),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (icon != null) Icon(icon, size: 20, color: color ?? scheme.primary),
-              if (icon != null) const SizedBox(height: 6),
+              if (icon != null) IconBadge(icon: icon!, color: c, size: 36),
+              if (icon != null) const SizedBox(height: 10),
               FittedBox(
                 fit: BoxFit.scaleDown,
                 alignment: AlignmentDirectional.centerStart,
@@ -95,7 +142,7 @@ class StatTile extends StatelessWidget {
                     style: Theme.of(context)
                         .textTheme
                         .headlineSmall
-                        ?.copyWith(fontWeight: FontWeight.w700, color: color)),
+                        ?.copyWith(fontWeight: FontWeight.w800, color: color)),
               ),
               const SizedBox(height: 2),
               Text(label,

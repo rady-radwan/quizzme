@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'app/app.dart';
 import 'app/services.dart';
@@ -8,6 +10,14 @@ AppLifecycleListener? _lifecycle;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Licences of the bundled Google Fonts (shown in Settings → Licences).
+  LicenseRegistry.addLicense(() async* {
+    final manifest = await AssetManifest.loadFromAssetBundle(rootBundle);
+    for (final path in manifest.listAssets().where((a) => a.startsWith('assets/font_licenses/'))) {
+      final name = path.split('/').last.replaceAll('.txt', '');
+      yield LicenseEntryWithLineBreaks(['Font: $name'], await rootBundle.loadString(path));
+    }
+  });
   try {
     AppServices.I = await AppServices.init();
   } catch (e, st) {

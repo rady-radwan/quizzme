@@ -10,7 +10,7 @@ class AppSpacing {
   static const double md = 12;
   static const double lg = 16;
   static const double xl = 24;
-  static const double radius = 16;
+  static const double radius = 20;
 }
 
 /// Brand colours taken from the Quiz me logo.
@@ -75,62 +75,6 @@ const Map<AppTheme, GlassPalette> glassPalettes = {
     glowA: Color(0xFF7FB2FF),
     glowB: Color(0xFFA9C8FF),
     solid: Color(0xFFEFF5FF),
-  ),
-  AppTheme.glassTeal: GlassPalette(
-    primary: Color(0xFF0B8F9B),
-    onPrimary: Colors.white,
-    band: Color(0xFF0E9AA7),
-    onBand: Colors.white,
-    bodyTop: Color(0xFFE2F6F6),
-    bodyBottom: Color(0xFFBFE6E8),
-    glowA: Color(0xFF7FD8DD),
-    glowB: Color(0xFFA6E7E3),
-    solid: Color(0xFFEEFAFA),
-  ),
-  AppTheme.glassYellow: GlassPalette(
-    primary: Color(0xFFF2A900),
-    onPrimary: Color(0xFF2E2200),
-    band: Color(0xFFFFCF3D),
-    onBand: Color(0xFF2E2200),
-    bodyTop: Color(0xFFFFF7DE),
-    bodyBottom: Color(0xFFFFE7A3),
-    glowA: Color(0xFFFFDB6E),
-    glowB: Color(0xFFFFEAA6),
-    solid: Color(0xFFFFFAEC),
-  ),
-  AppTheme.glassPurple: GlassPalette(
-    primary: Color(0xFF7048E8),
-    onPrimary: Colors.white,
-    band: Color(0xFF7C5CF0),
-    onBand: Colors.white,
-    bodyTop: Color(0xFFF0EBFF),
-    bodyBottom: Color(0xFFD8CCFF),
-    glowA: Color(0xFFB9A4FF),
-    glowB: Color(0xFFD6C8FF),
-    solid: Color(0xFFF6F2FF),
-  ),
-  AppTheme.glassPink: GlassPalette(
-    primary: Color(0xFFD6336C),
-    onPrimary: Colors.white,
-    band: Color(0xFFE64980),
-    onBand: Colors.white,
-    bodyTop: Color(0xFFFFEDF3),
-    bodyBottom: Color(0xFFF9CADB),
-    glowA: Color(0xFFFF9EC0),
-    glowB: Color(0xFFFFC2D6),
-    solid: Color(0xFFFFF4F8),
-  ),
-  AppTheme.glassMidnight: GlassPalette(
-    primary: Color(0xFF5AA9FF),
-    onPrimary: Color(0xFF00213F),
-    band: Color(0xFF14245A),
-    onBand: Colors.white,
-    bodyTop: Color(0xFF0B1433),
-    bodyBottom: Color(0xFF101E4A),
-    glowA: Color(0xFF2F5BD3),
-    glowB: Color(0xFF6B3FD8),
-    solid: Color(0xFF16224A),
-    dark: true,
   ),
 };
 
@@ -255,20 +199,12 @@ class AppThemes {
 
   static ThemeMode modeFor(AppTheme t) {
     switch (t) {
-      case AppTheme.system:
-        return ThemeMode.system;
       case AppTheme.dark:
       case AppTheme.amoled:
-      case AppTheme.glassMidnight:
         return ThemeMode.dark;
-      case AppTheme.light:
       case AppTheme.minimal:
       case AppTheme.sepia:
       case AppTheme.glassBlue:
-      case AppTheme.glassTeal:
-      case AppTheme.glassYellow:
-      case AppTheme.glassPurple:
-      case AppTheme.glassPink:
         return ThemeMode.light;
     }
   }
@@ -277,20 +213,35 @@ class AppThemes {
     final glass = glassPalettes[s.theme];
     if (glass != null && !glass.dark) return _glass(s, glass);
     switch (s.theme) {
-      case AppTheme.minimal:
-        return _minimal(s);
       case AppTheme.sepia:
         return _sepia(s);
       default:
-        return _build(s, _scheme(s, Brightness.light));
+        return _minimal(s);
     }
   }
 
   static ThemeData dark(AppSettings s) {
     if (s.theme == AppTheme.amoled) return _amoled(s);
-    final glass = glassPalettes[s.theme];
-    if (glass != null && glass.dark) return _glass(s, glass);
-    return _build(s, _scheme(s, Brightness.dark));
+    return _darkModern(s);
+  }
+
+  /// Deep blue-grey dark theme with clearly separated cards.
+  static ThemeData _darkModern(AppSettings s) {
+    final base = _scheme(s, Brightness.dark, seed: _seed(s, const Color(0xFF3B7BFF)));
+    final scheme = base.copyWith(
+      primary: s.useCustomAccent ? null : const Color(0xFF8AB4FF),
+      onPrimary: s.useCustomAccent ? null : const Color(0xFF00214D),
+      surface: const Color(0xFF0E1118),
+      surfaceContainerLowest: const Color(0xFF0B0D13),
+      surfaceContainerLow: const Color(0xFF151923),
+      surfaceContainer: const Color(0xFF1A1F2B),
+      surfaceContainerHigh: const Color(0xFF212736),
+      surfaceContainerHighest: const Color(0xFF293041),
+      onSurface: const Color(0xFFE8ECF5),
+      onSurfaceVariant: const Color(0xFFA9B1C4),
+      outlineVariant: const Color(0xFF2A3142),
+    );
+    return _build(s, scheme, scaffold: const Color(0xFF0E1118), outlinedCards: true);
   }
 
   static Color _seed(AppSettings s, Color fallback) =>
@@ -312,11 +263,11 @@ class AppThemes {
       surfaceContainerHigh: const Color(0xFF181818),
       surfaceContainerHighest: const Color(0xFF202020),
     );
-    return _build(s, scheme, scaffold: Colors.black);
+    return _build(s, scheme.copyWith(outlineVariant: const Color(0xFF262626)), scaffold: Colors.black, outlinedCards: true);
   }
 
   static ThemeData _minimal(AppSettings s) {
-    final base = _scheme(s, Brightness.light, seed: _seed(s, const Color(0xFF455A64)));
+    final base = _scheme(s, Brightness.light, seed: _seed(s, brandBlue));
     final scheme = base.copyWith(
       surface: Colors.white,
       surfaceContainerLowest: Colors.white,
@@ -393,14 +344,21 @@ class AppThemes {
       useMaterial3: true,
       colorScheme: scheme,
       fontFamily: family,
+      // Arabic text in a Latin-only font is drawn with a bundled Arabic font.
+      fontFamilyFallback: const ['Cairo'],
       scaffoldBackgroundColor: scaffold ?? scheme.surface,
       visualDensity: VisualDensity.standard,
       materialTapTargetSize: MaterialTapTargetSize.padded,
     );
-    final text = base.textTheme.copyWith(
-      bodyLarge: base.textTheme.bodyLarge?.copyWith(height: s.lineHeight),
-      bodyMedium: base.textTheme.bodyMedium?.copyWith(height: s.lineHeight),
-      titleMedium: base.textTheme.titleMedium?.copyWith(height: s.lineHeight * 0.95),
+    final tt = base.textTheme;
+    final text = tt.copyWith(
+      bodyLarge: tt.bodyLarge?.copyWith(height: s.lineHeight),
+      bodyMedium: tt.bodyMedium?.copyWith(height: s.lineHeight),
+      titleMedium: tt.titleMedium?.copyWith(height: s.lineHeight * 0.95, fontWeight: FontWeight.w600),
+      titleLarge: tt.titleLarge?.copyWith(fontWeight: FontWeight.w700, letterSpacing: -0.2),
+      headlineSmall: tt.headlineSmall?.copyWith(fontWeight: FontWeight.w700, letterSpacing: -0.3),
+      headlineMedium: tt.headlineMedium?.copyWith(fontWeight: FontWeight.w800, letterSpacing: -0.5),
+      labelLarge: tt.labelLarge?.copyWith(fontWeight: FontWeight.w600),
     );
     final shape = RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(AppSpacing.radius),

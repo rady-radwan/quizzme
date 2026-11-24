@@ -128,12 +128,7 @@ class SettingsScreen extends StatelessWidget {
             const Divider(height: 28),
             Text('Font', style: t.labelLarge),
             const SizedBox(height: 6),
-            SegmentedButton<AppFont>(
-              showSelectedIcon: false,
-              segments: [for (final f in AppFont.values) ButtonSegment(value: f, label: Text(f.label.split(' ').first))],
-              selected: {s.font},
-              onSelectionChanged: (v) => set(s.copyWith(font: v.first)),
-            ),
+            _FontTile(font: s.font, onChanged: (f) => set(s.copyWith(font: f))),
             const SizedBox(height: 12),
             Text('Text size: ${(s.textScale * 100).round()}%', style: t.labelLarge),
             Slider(
@@ -559,8 +554,9 @@ class SettingsScreen extends StatelessWidget {
             onTap: () => showErrorDialog(
               context,
               'Privacy',
-              'Quiz me stores all of your questions, answers, notes and statistics only on this device. '
-                  'It has no account, no analytics, no advertising and does not send your data anywhere. '
+              'Quiz me stores your questions, answers, notes and statistics on this device. '
+                  'If you sign in (Account & sync), a copy is kept in your private Quiz me account so your devices '
+                  'stay in sync; nobody else can read it. There are no analytics and no advertising. '
                   'Files leave the device only when you export or back up and choose where to save them. '
                   'Text-to-speech uses your device\'s own speech engine.',
             ),
@@ -583,12 +579,8 @@ class _ThemeTile extends StatelessWidget {
     final g = glassPalettes[theme];
     if (g != null) return [g.band, g.bodyTop, g.bodyBottom];
     switch (theme) {
-      case AppTheme.system:
-        return [Colors.white, const Color(0xFF1E1E1E)];
-      case AppTheme.light:
-        return [const Color(0xFFF7F8FC), const Color(0xFFDDE3F5)];
       case AppTheme.dark:
-        return [const Color(0xFF2A2D36), const Color(0xFF15171C)];
+        return [const Color(0xFF212736), const Color(0xFF0E1118)];
       case AppTheme.amoled:
         return [Colors.black, Colors.black];
       case AppTheme.minimal:
@@ -648,6 +640,147 @@ class _ThemeTile extends StatelessWidget {
                 maxLines: 2,
                 style: TextStyle(
                     fontSize: 12, fontWeight: selected ? FontWeight.w700 : FontWeight.w500)),
+          ]),
+        ),
+      ),
+    );
+  }
+}
+
+
+/// Shows the chosen font with a live sample; opens the font picker.
+class _FontTile extends StatelessWidget {
+  const _FontTile({required this.font, required this.onChanged});
+  final AppFont font;
+  final ValueChanged<AppFont> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      color: scheme.surfaceContainerHigh,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () async {
+          final f = await showFontPicker(context, font);
+          if (f != null) onChanged(f);
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Row(children: [
+            Container(
+              width: 52,
+              height: 52,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(color: scheme.primary.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(14)),
+              child: Text('Aa',
+                  style: TextStyle(fontFamily: font.family, fontSize: 22, fontWeight: FontWeight.w700, color: scheme.primary)),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(font.label, style: TextStyle(fontFamily: font.family, fontSize: 17, fontWeight: FontWeight.w700)),
+                Text('Tap to choose from ${AppFont.values.length} fonts',
+                    style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant)),
+              ]),
+            ),
+            const Icon(Icons.chevron_right_rounded),
+          ]),
+        ),
+      ),
+    );
+  }
+}
+
+/// Font picker: every font previewed in itself, grouped by style.
+Future<AppFont?> showFontPicker(BuildContext context, AppFont current) {
+  return showDialog<AppFont>(
+    context: context,
+    builder: (c) {
+      final scheme = Theme.of(c).colorScheme;
+      final size = MediaQuery.sizeOf(c);
+      return Dialog(
+        insetPadding: const EdgeInsets.all(20),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: 760, maxHeight: size.height * 0.86),
+          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(22, 20, 12, 8),
+              child: Row(children: [
+                Icon(Icons.font_download_outlined, color: scheme.primary),
+                const SizedBox(width: 10),
+                Expanded(child: Text('Choose a font', style: Theme.of(c).textTheme.titleLarge)),
+                IconButton(tooltip: 'Close', onPressed: () => Navigator.pop(c), icon: const Icon(Icons.close)),
+              ]),
+            ),
+            Flexible(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+                shrinkWrap: true,
+                children: [
+                  for (final g in FontGroup.values) ...[
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(6, 14, 6, 8),
+                      child: Text(g.label.toUpperCase(),
+                          style: TextStyle(
+                              fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 1.1, color: scheme.primary)),
+                    ),
+                    LayoutBuilder(builder: (context, cons) {
+                      final cols = cons.maxWidth >= 560 ? 2 : 1;
+                      final w = (cons.maxWidth - (cols - 1) * 10) / cols;
+                      return Wrap(spacing: 10, runSpacing: 10, children: [
+                        for (final f in AppFont.values.where((f) => f.group == g))
+                          SizedBox(width: w, child: _FontCard(font: f, selected: f == current, onTap: () => Navigator.pop(c, f))),
+                      ]);
+                    }),
+                  ],
+                ],
+              ),
+            ),
+          ]),
+        ),
+      );
+    },
+  );
+}
+
+class _FontCard extends StatelessWidget {
+  const _FontCard({required this.font, required this.selected, required this.onTap});
+  final AppFont font;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final arabic = font.group == FontGroup.arabic;
+    return Material(
+      color: selected ? scheme.primary.withValues(alpha: 0.12) : scheme.surfaceContainerHigh,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: selected ? scheme.primary : scheme.outlineVariant, width: selected ? 2 : 1),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              Expanded(
+                child: Text(font.label,
+                    style: TextStyle(fontFamily: font.family, fontSize: 18, fontWeight: FontWeight.w700)),
+              ),
+              if (selected) Icon(Icons.check_circle_rounded, color: scheme.primary, size: 22),
+            ]),
+            const SizedBox(height: 6),
+            Text(
+              arabic ? 'The quick brown fox · أي جملة صحيحة نحوياً؟' : 'The quick brown fox jumps over the lazy dog. 123',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontFamily: font.family, fontSize: 15, color: scheme.onSurfaceVariant, height: 1.35),
+            ),
           ]),
         ),
       ),

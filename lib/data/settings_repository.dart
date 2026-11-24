@@ -6,39 +6,78 @@ import '../core/models.dart';
 import '../core/srs.dart';
 
 enum AppTheme {
-  system('system', 'System default'),
-  light('light', 'Light'),
   dark('dark', 'Dark'),
   amoled('amoled', 'AMOLED Black'),
   minimal('minimal', 'Minimal White'),
   sepia('sepia', 'Sepia'),
-  glassBlue('glass_blue', 'Glassy Blue'),
-  glassTeal('glass_teal', 'Glassy Teal'),
-  glassYellow('glass_yellow', 'Glassy Yellow'),
-  glassPurple('glass_purple', 'Glassy Purple'),
-  glassPink('glass_pink', 'Glassy Pink'),
-  glassMidnight('glass_midnight', 'Glassy Midnight');
+  glassBlue('glass_blue', 'Glassy Blue');
 
   const AppTheme(this.key, this.label);
   final String key;
   final String label;
 
-  static AppTheme fromKey(String? k) =>
-      values.firstWhere((t) => t.key == k, orElse: () => AppTheme.system);
+  /// Themes removed in later versions map to the closest remaining one.
+  static AppTheme fromKey(String? k) {
+    switch (k) {
+      case 'light':
+        return AppTheme.minimal;
+      case 'system':
+      case 'glass_midnight':
+        return AppTheme.dark;
+      case 'glass_teal':
+      case 'glass_yellow':
+      case 'glass_purple':
+      case 'glass_pink':
+        return AppTheme.glassBlue;
+    }
+    return values.firstWhere((t) => t.key == k, orElse: () => AppTheme.dark);
+  }
 }
 
-enum AppFont {
-  system('system', 'Default (Roboto)', null),
-  serif('serif', 'Serif', 'serif'),
-  mono('mono', 'Monospace', 'monospace');
+/// Groups shown in the font picker.
+enum FontGroup {
+  modern('Modern'),
+  friendly('Friendly & rounded'),
+  readable('Easy to read'),
+  serif('Serif (book style)'),
+  mono('Monospace'),
+  arabic('Arabic & Latin');
 
-  const AppFont(this.key, this.label, this.family);
+  const FontGroup(this.label);
+  final String label;
+}
+
+/// App fonts. All except [system] are Google Fonts bundled with the app
+/// (assets/fonts, SIL Open Font License / Apache 2.0), so they work offline.
+enum AppFont {
+  system('system', 'System default', null, FontGroup.modern),
+  inter('inter', 'Inter', 'Inter', FontGroup.modern),
+  roboto('roboto', 'Roboto', 'Roboto', FontGroup.modern),
+  dmSans('dm_sans', 'DM Sans', 'DM Sans', FontGroup.modern),
+  montserrat('montserrat', 'Montserrat', 'Montserrat', FontGroup.modern),
+  openSans('open_sans', 'Open Sans', 'Open Sans', FontGroup.modern),
+  sourceSans('source_sans', 'Source Sans 3', 'Source Sans 3', FontGroup.modern),
+  poppins('poppins', 'Poppins', 'Poppins', FontGroup.friendly),
+  nunito('nunito', 'Nunito', 'Nunito', FontGroup.friendly),
+  lato('lato', 'Lato', 'Lato', FontGroup.friendly),
+  lexend('lexend', 'Lexend', 'Lexend', FontGroup.readable),
+  atkinson('atkinson', 'Atkinson Hyperlegible', 'Atkinson Hyperlegible', FontGroup.readable),
+  merriweather('serif', 'Merriweather', 'Merriweather', FontGroup.serif),
+  lora('lora', 'Lora', 'Lora', FontGroup.serif),
+  playfair('playfair', 'Playfair Display', 'Playfair Display', FontGroup.serif),
+  jetbrainsMono('mono', 'JetBrains Mono', 'JetBrains Mono', FontGroup.mono),
+  cairo('cairo', 'Cairo', 'Cairo', FontGroup.arabic),
+  tajawal('tajawal', 'Tajawal', 'Tajawal', FontGroup.arabic),
+  notoKufi('noto_kufi', 'Noto Kufi Arabic', 'Noto Kufi Arabic', FontGroup.arabic);
+
+  const AppFont(this.key, this.label, this.family, this.group);
   final String key;
   final String label;
   final String? family;
+  final FontGroup group;
 
   static AppFont fromKey(String? k) =>
-      values.firstWhere((t) => t.key == k, orElse: () => AppFont.system);
+      values.firstWhere((t) => t.key == k, orElse: () => AppFont.inter);
 }
 
 enum LayoutDirectionPref {
@@ -58,10 +97,10 @@ enum LayoutDirectionPref {
 /// schema migration; unknown or missing keys fall back to defaults.
 class AppSettings {
   const AppSettings({
-    this.theme = AppTheme.system,
+    this.theme = AppTheme.dark,
     this.accentColor = 0xFF1E5BD6,
     this.useCustomAccent = false,
-    this.font = AppFont.system,
+    this.font = AppFont.inter,
     this.textScale = 1.0,
     this.lineHeight = 1.4,
     this.highContrast = false,

@@ -545,7 +545,13 @@ void main() {
       expect(loaded.defaultQuestionCount, 25);
       expect(loaded.reminderDays, [1, 3, 5]);
       final bad = AppSettings.fromMap({'theme': 'neon', 'textScale': 'huge', 'reminderDays': 'x'});
-      expect(bad.theme, AppTheme.system);
+      expect(bad.theme, AppTheme.dark);
+      // Themes removed in later versions map to the closest remaining one.
+      expect(AppSettings.fromMap({'theme': 'glass_teal'}).theme, AppTheme.glassBlue);
+      expect(AppSettings.fromMap({'theme': 'light'}).theme, AppTheme.minimal);
+      // Old font keys keep working.
+      expect(AppSettings.fromMap({'font': 'serif'}).font, AppFont.merriweather);
+      expect(AppSettings.fromMap({'font': 'mono'}).font, AppFont.jetbrainsMono);
       expect(bad.textScale, 1.0);
       expect(bad.reminderDays.length, 7);
     });

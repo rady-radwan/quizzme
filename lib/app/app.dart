@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 import '../data/settings_repository.dart';
+import '../ui/common/desktop.dart';
 import '../ui/shell.dart';
 import 'services.dart';
 import 'theme.dart';
@@ -35,7 +36,9 @@ class QuizMeApp extends StatelessWidget {
           builder: (context, child) {
             final mq = MediaQuery.of(context);
             final system = mq.textScaler.scale(1.0);
-            final factor = (system * s.textScale).clamp(0.8, 2.6).toDouble();
+            // Slightly larger text on Windows/desktop screens viewed from further away.
+            final desktopBoost = isDesktop ? 1.06 : 1.0;
+            final factor = (system * s.textScale * desktopBoost).clamp(0.8, 2.6).toDouble();
             return MediaQuery(
               data: mq.copyWith(
                 textScaler: TextScaler.linear(factor),

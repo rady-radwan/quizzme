@@ -8,6 +8,7 @@ import '../../data/sample_data.dart';
 import '../../data/session_repository.dart';
 import '../../data/stats_repository.dart';
 import '../banks/category_screen.dart';
+import '../common/desktop.dart';
 import '../common/reloadable.dart';
 import '../common/widgets.dart';
 import '../import/import_screen.dart';
@@ -55,22 +56,27 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final width = MediaQuery.sizeOf(context).width;
+    final wide = width >= 840 || (isDesktop && width >= 600);
     return Scaffold(
-      appBar: AppBar(
-        centerTitle: true,
-        toolbarHeight: 60,
-        title: const AppLogo(size: 36, useAmbientColor: true),
-      ),
+      // On wide screens the side menu already shows the logo.
+      appBar: wide
+          ? null
+          : AppBar(
+              centerTitle: true,
+              toolbarHeight: 60,
+              title: const AppLogo(size: 36, useAmbientColor: true),
+            ),
       body: SafeArea(
-        top: false,
+        top: wide,
         child: Reloadable<_HomeData>(
           load: _load,
           builder: (context, d, reload) => RefreshIndicator(
             onRefresh: reload,
             child: ListView(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+              padding: EdgeInsets.fromLTRB(wide ? 28 : 16, wide ? 24 : 12, wide ? 28 : 16, 32),
               children: [
-                Readable(child: _content(context, d)),
+                Readable(maxWidth: 1240, child: _content(context, d)),
               ],
             ),
           ),
@@ -79,100 +85,104 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
+  static String _greeting() {
+    final h = DateTime.now().hour;
+    if (h < 5) return 'Good evening';
+    if (h < 12) return 'Good morning';
+    if (h < 17) return 'Good afternoon';
+    return 'Good evening';
+  }
+
+  Widget _header(BuildContext context, _HomeData d, String msg) {
+    final t = Theme.of(context).textTheme;
+    final scheme = Theme.of(context).colorScheme;
+    return Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+      Expanded(
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(_greeting(), style: t.headlineSmall?.copyWith(fontWeight: FontWeight.w800)),
+          const SizedBox(height: 2),
+          Text(msg, style: t.bodyMedium?.copyWith(color: scheme.onSurfaceVariant)),
+        ]),
+      ),
+      if (d.dash.currentStreak > 0) _StreakBadge(days: d.dash.currentStreak),
+    ]);
+  }
+
   Widget _content(BuildContext context, _HomeData d) {
-    final theme = Theme.of(context);
     final svc = AppServices.I;
     final goal = svc.settings.value.dailyQuestionGoal;
     final today = d.dash.today.answered;
     final msg = _messages[DateTime.now().difference(DateTime(2024)).inDays % _messages.length];
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Row(children: [
-          Expanded(
-            child: Text(msg,
-                style: theme.textTheme.bodyMedium
-                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant, fontStyle: FontStyle.italic)),
-          ),
-          if (d.dash.currentStreak > 0)
-            Tooltip(
-              message: 'Study streak',
-              child: Chip(
-                avatar: const Icon(Icons.local_fire_department, size: 18),
-                label: Text('${d.dash.currentStreak} day${d.dash.currentStreak == 1 ? '' : 's'}'),
-              ),
-            ),
-        ]),
-        const SizedBox(height: 16),
-        if (d.dash.totalQuestions == 0) _welcome(context) else ...[
-          _todayCard(context, today, goal),
-          const SizedBox(height: 12),
-          _reviewCard(context, d.dash),
-          if (d.active != null) ...[
-            const SizedBox(height: 12),
-            _continueCard(context, d.active!, d.activeAnswered),
-          ],
-          const SectionHeader('Quick actions'),
-          _quickActions(context),
-          if (d.recs.isNotEmpty) ...[
-            const SectionHeader('Suggestions'),
-            for (final r in d.recs) _recTile(context, r),
-          ],
-          if (d.subjects.isNotEmpty) ...[
-            SectionHeader('My subjects',
-                action: TextButton(
-                    onPressed: () => HomeShell.of(context)?.select(2), child: const Text('All banks'))),
-            Card(
-              child: Column(children: [
-                for (final s in d.subjects)
-                  ListTile(
-                    leading: NodeAvatar(iconKey: s.subject.iconKey, color: s.subject.color, size: 36),
-                    title: Text(s.subject.name),
-                    subtitle: Padding(
-                      padding: const EdgeInsets.only(top: 6),
-                      child: LabeledProgress(
-                        label: '${s.total} questions',
-                        value: s.masteredFraction,
-                        trailing: '${(s.masteredFraction * 100).round()}% mastered',
-                      ),
-                    ),
-                    onTap: () => Navigator.push(context,
-                        MaterialPageRoute<void>(builder: (_) => CategoryScreen(categoryId: s.subject.id))),
-                  ),
-              ]),
-            ),
-          ],
-          if (d.last != null) ...[
-            const SectionHeader('Recent activity'),
-            Card(
-              child: ListTile(
-                leading: const Icon(Icons.history),
-                title: Text('Last quiz: ${d.last!.title}'),
-                subtitle: Text('Score: ${d.last!.score?.round() ?? 0}% · '
-                    '${d.last!.correct}/${d.last!.total} correct'),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => Navigator.push(context,
-                    MaterialPageRoute<void>(builder: (_) => ResultsScreen(sessionId: d.last!.id))),
-              ),
-            ),
-          ],
-        ],
-      ],
-    );
-  }
+    if (d.dash.totalQuestions == 0) {
+      return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        _header(context, d, msg),
+        const SizedBox(height: 18),
+        _welcome(context),
+      ]);
+    }
 
+    final main = <Widget>[
+      _heroCard(context, today, goal),
+      const SizedBox(height: 14),
+      _statsRow(context, d.dash),
+      if (d.active != null) ...[
+        const SizedBox(height: 14),
+        _continueCard(context, d.active!, d.activeAnswered),
+      ],
+      const SectionHeader('Quick actions'),
+      _quickActions(context),
+    ];
+    final side = <Widget>[
+      if (d.recs.isNotEmpty) ...[
+        const SectionHeader('Suggestions'),
+        for (final r in d.recs) _recTile(context, r),
+      ],
+      if (d.subjects.isNotEmpty) ...[
+        SectionHeader('My subjects',
+            action: TextButton(onPressed: () => HomeShell.of(context)?.select(2), child: const Text('All banks'))),
+        for (final s in d.subjects) _subjectCard(context, s),
+      ],
+      if (d.last != null) ...[
+        const SectionHeader('Recent activity'),
+        _recentCard(context, d.last!),
+      ],
+    ];
+
+    return LayoutBuilder(builder: (context, c) {
+      if (c.maxWidth < 1000) {
+        return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          _header(context, d, msg),
+          const SizedBox(height: 18),
+          ...main,
+          ...side,
+        ]);
+      }
+      return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        _header(context, d, msg),
+        const SizedBox(height: 20),
+        Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Expanded(flex: 7, child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: main)),
+          const SizedBox(width: 24),
+          Expanded(
+            flex: 5,
+            child: Transform.translate(
+              // Align the first section title with the top of the hero card.
+              offset: const Offset(0, -24),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: side),
+            ),
+          ),
+        ]),
+      ]);
+    });
+  }
   Widget _welcome(BuildContext context) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Center(
-            child: Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
-              child: Image.asset('assets/branding/logo.png', height: 150),
-            ),
+            child: Image.asset('assets/branding/logo.png', height: 150),
           ),
           const SizedBox(height: 16),
           Text('Welcome to Quiz me', style: Theme.of(context).textTheme.titleLarge),
@@ -206,86 +216,157 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _todayCard(BuildContext context, int today, int goal) {
+  /// Gradient hero: today's progress towards the daily goal.
+  Widget _heroCard(BuildContext context, int today, int goal) {
+    final scheme = Theme.of(context).colorScheme;
+    final t = Theme.of(context).textTheme;
     final frac = goal <= 0 ? 1.0 : (today / goal).clamp(0.0, 1.0);
-    final theme = Theme.of(context);
-    return Card(
-      color: theme.colorScheme.primaryContainer,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text("Today's learning",
-              style: theme.textTheme.labelLarge?.copyWith(color: theme.colorScheme.onPrimaryContainer)),
-          const SizedBox(height: 6),
-          Text(goal > 0 ? '$today / $goal questions completed' : '$today questions answered today',
-              style: theme.textTheme.titleLarge?.copyWith(
-                  color: theme.colorScheme.onPrimaryContainer, fontWeight: FontWeight.w700)),
-          const SizedBox(height: 10),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: LinearProgressIndicator(
-              value: frac,
-              minHeight: 10,
-              semanticsLabel: 'Daily goal progress',
-              semanticsValue: '${(frac * 100).round()} percent',
+    final dark = scheme.brightness == Brightness.dark;
+    final c1 = dark ? const Color(0xFF2F5BEA) : brandBlue;
+    final c2 = dark ? const Color(0xFF6A3FD8) : const Color(0xFF5B3FD6);
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(26),
+        gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [c1, c2]),
+        boxShadow: [BoxShadow(color: c1.withValues(alpha: 0.35), blurRadius: 24, offset: const Offset(0, 10))],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Stack(children: [
+        Positioned(right: -40, top: -50, child: _bubble(170, 0.10)),
+        Positioned(right: 90, bottom: -70, child: _bubble(140, 0.08)),
+        Positioned(left: -30, bottom: -40, child: _bubble(100, 0.06)),
+        Padding(
+          padding: const EdgeInsets.all(22),
+          child: Row(children: [
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Row(children: [
+                  const Icon(Icons.auto_graph_rounded, color: Colors.white70, size: 20),
+                  const SizedBox(width: 6),
+                  Text("Today's learning", style: t.labelLarge?.copyWith(color: Colors.white70)),
+                ]),
+                const SizedBox(height: 10),
+                Text.rich(
+                  TextSpan(children: [
+                    TextSpan(text: '$today', style: const TextStyle(fontSize: 40, fontWeight: FontWeight.w800)),
+                    if (goal > 0)
+                      TextSpan(
+                          text: ' / $goal',
+                          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600, color: Colors.white70)),
+                  ]),
+                  style: const TextStyle(color: Colors.white, height: 1.1),
+                ),
+                Text(goal > 0 ? 'questions completed' : 'questions answered today',
+                    style: t.bodyMedium?.copyWith(color: Colors.white70)),
+                const SizedBox(height: 14),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: LinearProgressIndicator(
+                    value: frac,
+                    minHeight: 10,
+                    color: brandGold,
+                    backgroundColor: Colors.white.withValues(alpha: 0.22),
+                    semanticsLabel: 'Daily goal progress',
+                    semanticsValue: '${(frac * 100).round()} percent',
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  goal <= 0
+                      ? 'Keep going!'
+                      : today >= goal
+                          ? 'Daily goal reached — well done!'
+                          : '${goal - today} more to reach your daily goal',
+                  style: t.bodySmall?.copyWith(color: Colors.white.withValues(alpha: 0.9)),
+                ),
+              ]),
             ),
-          ),
-          const SizedBox(height: 6),
-          if (goal > 0)
-            Text(today >= goal ? 'Daily goal reached — well done!' : '${(frac * 100).round()}% of daily goal',
-                style: TextStyle(color: theme.colorScheme.onPrimaryContainer)),
-        ]),
-      ),
+            const SizedBox(width: 18),
+            _HeroRing(value: frac, label: '${(frac * 100).round()}%'),
+          ]),
+        ),
+      ]),
     );
   }
 
-  Widget _reviewCard(BuildContext context, DashboardStats s) {
-    final theme = Theme.of(context);
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(children: [
-          Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('Questions due today', style: theme.textTheme.labelLarge),
-              const SizedBox(height: 4),
-              Text('${s.dueToday}', style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800)),
-              Text(
-                s.overdue > 0
-                    ? '${s.overdue} overdue · ${s.dueTomorrow} due tomorrow'
-                    : '${s.dueTomorrow} due tomorrow · ${s.mastered} mastered',
-                style: theme.textTheme.bodySmall,
-              ),
-            ]),
-          ),
-          FilledButton(
-            onPressed: s.dueToday == 0
-                ? null
-                : () => launchQuiz(
-                    context,
-                    defaultConfig(
-                        title: 'Due reviews',
-                        selection: SelectionMode.spaced,
-                        count: s.dueToday > 100 ? 100 : s.dueToday)),
-            child: const Text('Review now'),
-          ),
-        ]),
-      ),
-    );
-  }
+  static Widget _bubble(double size, double alpha) => Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withValues(alpha: alpha)),
+      );
 
+  /// Four colourful numbers; "Due today" carries the main call to action.
+  Widget _statsRow(BuildContext context, DashboardStats s) {
+    final dark = Theme.of(context).colorScheme.brightness == Brightness.dark;
+    final blue = dark ? const Color(0xFF7FB0FF) : const Color(0xFF1E63E9);
+    final orange = dark ? const Color(0xFFFFB067) : const Color(0xFFE8710A);
+    final green = dark ? const Color(0xFF7BD88F) : const Color(0xFF1E9E4A);
+    final purple = dark ? const Color(0xFFC4A7FF) : const Color(0xFF7048E8);
+    void review() => launchQuiz(
+        context,
+        defaultConfig(
+            title: 'Due reviews', selection: SelectionMode.spaced, count: s.dueToday > 100 ? 100 : s.dueToday));
+    final tiles = [
+      _MiniStat(
+        icon: Icons.event_available_rounded,
+        color: blue,
+        value: '${s.dueToday}',
+        label: 'Due today',
+        action: s.dueToday == 0 ? null : 'Review now',
+        onTap: s.dueToday == 0 ? null : review,
+      ),
+      _MiniStat(
+        icon: Icons.warning_amber_rounded,
+        color: orange,
+        value: '${s.overdue}',
+        label: 'Overdue',
+        onTap: s.overdue == 0 ? null : review,
+      ),
+      _MiniStat(icon: Icons.workspace_premium_rounded, color: green, value: '${s.mastered}', label: 'Mastered'),
+      _MiniStat(
+        icon: Icons.track_changes_rounded,
+        color: purple,
+        value: s.totalAttempts == 0 ? '—' : '${(s.accuracy * 100).round()}%',
+        label: 'Accuracy',
+      ),
+    ];
+    return LayoutBuilder(builder: (context, c) {
+      final cols = c.maxWidth >= 560 ? 4 : 2;
+      final w = (c.maxWidth - (cols - 1) * 12) / cols;
+      return Wrap(spacing: 12, runSpacing: 12, children: [for (final t in tiles) SizedBox(width: w, child: t)]);
+    });
+  }
   Widget _continueCard(BuildContext context, QuizSession s, int answered) {
+    final scheme = Theme.of(context).colorScheme;
+    final frac = s.total == 0 ? 0.0 : answered / s.total;
     return Card(
-      child: ListTile(
-        leading: const Icon(Icons.play_circle_outline, size: 32),
-        title: const Text('Continue last quiz'),
-        subtitle: Text('${s.title} · $answered of ${s.total} answered · started ${_ago(s.createdAt)}'),
-        trailing: const Icon(Icons.chevron_right),
+      child: InkWell(
         onTap: () => openSession(context, s),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(children: [
+            IconBadge(icon: Icons.play_arrow_rounded, color: scheme.primary, size: 48, filled: true),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text('Continue where you left off',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                const SizedBox(height: 2),
+                Text('${s.title} · $answered of ${s.total} answered · started ${_ago(s.createdAt)}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant)),
+                const SizedBox(height: 8),
+                GradientProgressBar(value: frac, height: 6),
+              ]),
+            ),
+            const SizedBox(width: 8),
+            Icon(Icons.chevron_right_rounded, color: scheme.onSurfaceVariant),
+          ]),
+        ),
       ),
     );
   }
-
   static String _ago(DateTime t) {
     final days = calendarDaysBetween(t, DateTime.now());
     if (days == 0) return 'today';
@@ -294,78 +375,161 @@ class HomeScreen extends StatelessWidget {
   }
 
   Widget _quickActions(BuildContext context) {
-    final actions = <(IconData, String, VoidCallback)>[
-      (Icons.play_arrow_rounded, 'Start Quiz', () => HomeShell.of(context)?.select(1)),
+    final dark = Theme.of(context).colorScheme.brightness == Brightness.dark;
+    Color c(int light, int darkC) => Color(dark ? darkC : light);
+    final actions = <(IconData, String, String, Color, VoidCallback)>[
       (
-        Icons.fiber_new_outlined,
+        Icons.play_arrow_rounded,
+        'Start Quiz',
+        'Build a custom quiz',
+        c(0xFF1E63E9, 0xFF6EA2FF),
+        () => HomeShell.of(context)?.select(1)
+      ),
+      (
+        Icons.fiber_new_rounded,
         'New Questions',
+        'Learn something new',
+        c(0xFF0E9F6E, 0xFF5FD6A5),
         () => launchQuiz(context, defaultConfig(title: 'New questions', selection: SelectionMode.newQuestions))
       ),
       (
-        Icons.error_outline,
+        Icons.error_outline_rounded,
         'Review Mistakes',
+        'Fix what you missed',
+        c(0xFFE03131, 0xFFFF8787),
         () => Navigator.push(context, MaterialPageRoute<void>(builder: (_) => const MistakesScreen()))
       ),
       (
-        Icons.style_outlined,
+        Icons.style_rounded,
         'Flashcards',
+        'Flip and remember',
+        c(0xFF7048E8, 0xFFB197FC),
         () => launchQuiz(context,
             defaultConfig(title: 'Flashcards', selection: SelectionMode.random, style: QuizStyle.flashcards, count: 20))
       ),
       (
-        Icons.bolt_outlined,
+        Icons.bolt_rounded,
         'Quick Review',
+        '10 questions, fast',
+        c(0xFFE8710A, 0xFFFFB067),
         () => launchQuiz(context, defaultConfig(title: 'Quick review', selection: SelectionMode.quickReview, count: 10))
       ),
-      (Icons.library_books_outlined, 'Question Banks', () => HomeShell.of(context)?.select(2)),
+      (
+        Icons.library_books_rounded,
+        'Question Banks',
+        'Browse your library',
+        c(0xFF0B8F9B, 0xFF66D9E8),
+        () => HomeShell.of(context)?.select(2)
+      ),
     ];
-    return LayoutBuilder(builder: (context, c) {
-      final cols = c.maxWidth > 560 ? 3 : 2;
-      final w = (c.maxWidth - (cols - 1) * 8) / cols;
-      return Wrap(spacing: 8, runSpacing: 8, children: [
+    return LayoutBuilder(builder: (context, cons) {
+      final cols = cons.maxWidth > 520 ? 3 : 2;
+      final w = (cons.maxWidth - (cols - 1) * 12) / cols;
+      return Wrap(spacing: 12, runSpacing: 12, children: [
         for (final a in actions)
           SizedBox(
             width: w,
-            child: Card(
-              child: InkWell(
-                onTap: a.$3,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                  child: Row(children: [
-                    Icon(a.$1, color: Theme.of(context).colorScheme.primary),
-                    const SizedBox(width: 10),
-                    Expanded(child: Text(a.$2, style: const TextStyle(fontWeight: FontWeight.w600))),
-                  ]),
-                ),
-              ),
-            ),
+            child: _ActionTile(icon: a.$1, title: a.$2, subtitle: a.$3, color: a.$4, onTap: a.$5),
           ),
       ]);
     });
   }
 
   Widget _recTile(BuildContext context, Recommendation r) {
+    final scheme = Theme.of(context).colorScheme;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(bottom: 10),
       child: Card(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 8, 8),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [
-              Icon(Icons.lightbulb_outline, size: 20, color: Theme.of(context).colorScheme.tertiary),
-              const SizedBox(width: 8),
-              Expanded(child: Text(r.message)),
+        child: InkWell(
+          onTap: () => _runRecommendation(context, r),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(14, 14, 10, 14),
+            child: Row(children: [
+              const IconBadge(icon: Icons.lightbulb_rounded, color: brandGold, size: 40),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(r.message),
+                  const SizedBox(height: 4),
+                  Text(r.actionLabel,
+                      style: TextStyle(color: scheme.primary, fontWeight: FontWeight.w700, fontSize: 13)),
+                ]),
+              ),
+              Icon(Icons.chevron_right_rounded, color: scheme.onSurfaceVariant),
             ]),
-            Align(
-              alignment: AlignmentDirectional.centerEnd,
-              child: TextButton(onPressed: () => _runRecommendation(context, r), child: Text(r.actionLabel)),
-            ),
-          ]),
+          ),
         ),
       ),
     );
   }
 
+  Widget _subjectCard(BuildContext context, SubjectProgress s) {
+    final scheme = Theme.of(context).colorScheme;
+    final pct = (s.masteredFraction * 100).round();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Card(
+        child: InkWell(
+          onTap: () => Navigator.push(
+              context, MaterialPageRoute<void>(builder: (_) => CategoryScreen(categoryId: s.subject.id))),
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Row(children: [
+              NodeAvatar(iconKey: s.subject.iconKey, color: s.subject.color, size: 44),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Row(children: [
+                    Expanded(
+                      child: Text(s.subject.name,
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                    ),
+                    Text('$pct%',
+                        style: TextStyle(fontWeight: FontWeight.w800, color: progressColor(context, s.masteredFraction))),
+                  ]),
+                  const SizedBox(height: 2),
+                  Text('${s.total} questions · $pct% mastered',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant)),
+                  const SizedBox(height: 8),
+                  GradientProgressBar(value: s.masteredFraction, height: 6),
+                ]),
+              ),
+            ]),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _recentCard(BuildContext context, QuizSession last) {
+    final scheme = Theme.of(context).colorScheme;
+    final score = last.score?.round() ?? 0;
+    final color = score >= 80 ? correctColor(scheme) : (score >= 50 ? brandGold : incorrectColor(scheme));
+    return Card(
+      child: InkWell(
+        onTap: () =>
+            Navigator.push(context, MaterialPageRoute<void>(builder: (_) => ResultsScreen(sessionId: last.id))),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Row(children: [
+            ProgressRing(value: score / 100, label: '$score%', size: 48, color: color),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(last.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                Text('Last quiz · ${last.correct}/${last.total} correct',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant)),
+              ]),
+            ),
+            Icon(Icons.chevron_right_rounded, color: scheme.onSurfaceVariant),
+          ]),
+        ),
+      ),
+    );
+  }
   static void _runRecommendation(BuildContext context, Recommendation r) {
     switch (r.action) {
       case RecommendationAction.reviewDue:
@@ -396,3 +560,173 @@ class HomeScreen extends StatelessWidget {
 Color progressColor(BuildContext context, double f) =>
     masteryColor(f >= 0.8 ? MasteryLevel.mastered : f >= 0.5 ? MasteryLevel.wellLearned : MasteryLevel.learning,
         Theme.of(context).colorScheme);
+
+class _StreakBadge extends StatelessWidget {
+  const _StreakBadge({required this.days});
+  final int days;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: 'Study streak',
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(colors: [Color(0xFFFF9A3C), Color(0xFFFF5F6D)]),
+          borderRadius: BorderRadius.circular(30),
+          boxShadow: [
+            BoxShadow(color: const Color(0xFFFF7A00).withValues(alpha: 0.3), blurRadius: 12, offset: const Offset(0, 4))
+          ],
+        ),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          const Icon(Icons.local_fire_department_rounded, color: Colors.white, size: 20),
+          const SizedBox(width: 6),
+          Text('$days day${days == 1 ? '' : 's'}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
+        ]),
+      ),
+    );
+  }
+}
+
+/// White ring on the hero card.
+class _HeroRing extends StatelessWidget {
+  const _HeroRing({required this.value, required this.label});
+  final double value;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: 'Daily goal $label',
+      child: ExcludeSemantics(
+        child: SizedBox(
+          width: 108,
+          height: 108,
+          child: Stack(alignment: Alignment.center, children: [
+            SizedBox(
+              width: 108,
+              height: 108,
+              child: CircularProgressIndicator(
+                value: value.clamp(0.0, 1.0),
+                strokeWidth: 10,
+                strokeCap: StrokeCap.round,
+                color: Colors.white,
+                backgroundColor: Colors.white.withValues(alpha: 0.2),
+              ),
+            ),
+            Column(mainAxisSize: MainAxisSize.min, children: [
+              Text(label, style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w800)),
+              const Text('of goal', style: TextStyle(color: Colors.white70, fontSize: 12)),
+            ]),
+          ]),
+        ),
+      ),
+    );
+  }
+}
+
+class _MiniStat extends StatelessWidget {
+  const _MiniStat({
+    required this.icon,
+    required this.color,
+    required this.value,
+    required this.label,
+    this.action,
+    this.onTap,
+  });
+  final IconData icon;
+  final Color color;
+  final String value;
+  final String label;
+  final String? action;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Card(
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              IconBadge(icon: icon, color: color, size: 36),
+              const Spacer(),
+              if (action != null)
+                Flexible(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration:
+                        BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(20)),
+                    child: Text(action!,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w700)),
+                  ),
+                ),
+            ]),
+            const SizedBox(height: 10),
+            Text(value,
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800, color: color)),
+            Text(label, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant)),
+          ]),
+        ),
+      ),
+    );
+  }
+}
+
+class _ActionTile extends StatefulWidget {
+  const _ActionTile(
+      {required this.icon, required this.title, required this.subtitle, required this.color, required this.onTap});
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  State<_ActionTile> createState() => _ActionTileState();
+}
+
+class _ActionTileState extends State<_ActionTile> {
+  bool _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: AnimatedScale(
+        scale: _hover ? 1.02 : 1,
+        duration: const Duration(milliseconds: 140),
+        child: Card(
+          child: InkWell(
+            onTap: widget.onTap,
+            child: Padding(
+              padding: const EdgeInsets.all(14),
+              child: Row(children: [
+                IconBadge(icon: widget.icon, color: widget.color, size: 44, filled: true),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text(widget.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                    Text(widget.subtitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant)),
+                  ]),
+                ),
+              ]),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
