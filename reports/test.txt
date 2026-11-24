@@ -1,0 +1,92 @@
+00:00 +0: loading /home/runner/work/quizzme/quizzme/test/data/database_test.dart
+00:00 +0: /home/runner/work/quizzme/quizzme/test/data/database_test.dart: Hierarchy and statistics subjects → categories → banks with accurate counts
+00:00 +1: /home/runner/work/quizzme/quizzme/test/data/sync_test.dart: every write is recorded in the change log, deletions included
+00:00 +2: /home/runner/work/quizzme/quizzme/test/data/database_test.dart: Hierarchy and statistics a category cannot be moved inside itself
+00:01 +3: /home/runner/work/quizzme/quizzme/test/data/sync_test.dart: snapshot survives encode/decode unchanged
+00:01 +4: /home/runner/work/quizzme/quizzme/test/data/sync_test.dart: snapshot survives encode/decode unchanged
+00:01 +5: /home/runner/work/quizzme/quizzme/test/data/database_test.dart: Quiz engine New Questions mode never repeats presented questions
+00:01 +6: /home/runner/work/quizzme/quizzme/test/data/sync_test.dart: a new device receives everything, then both devices converge
+00:01 +7: /home/runner/work/quizzme/quizzme/test/data/sync_test.dart: a new device receives everything, then both devices converge
+00:01 +8: /home/runner/work/quizzme/quizzme/test/data/database_test.dart: Quiz engine requesting 100 questions from a bank with 20
+00:01 +9: /home/runner/work/quizzme/quizzme/test/data/sync_test.dart: the latest edit of the same question wins on both devices
+00:01 +10: /home/runner/work/quizzme/quizzme/test/data/sync_test.dart: the latest edit of the same question wins on both devices
+00:01 +11: /home/runner/work/quizzme/quizzme/test/data/sync_test.dart: the latest edit of the same question wins on both devices
+00:01 +12: /home/runner/work/quizzme/quizzme/test/data/database_test.dart: Quiz engine an interrupted quiz resumes with the same questions and answers
+00:01 +13: /home/runner/work/quizzme/quizzme/test/data/sync_test.dart: replaceWith makes a device an exact copy of the cloud
+00:01 +14: /home/runner/work/quizzme/quizzme/test/data/sync_test.dart: replaceWith makes a device an exact copy of the cloud
+00:01 +15: /home/runner/work/quizzme/quizzme/test/data/database_test.dart: Quiz engine manual review of written answers
+00:01 +16: /home/runner/work/quizzme/quizzme/test/data/sync_test.dart: applying remote changes does not mark them as local changes
+00:02 +17: /home/runner/work/quizzme/quizzme/test/data/database_test.dart: Quiz engine flashcard ratings update the schedule
+00:02 +18: /home/runner/work/quizzme/quizzme/test/data/database_test.dart: Quiz engine quick review orders due and difficult questions first
+00:02 +19: /home/runner/work/quizzme/quizzme/test/data/database_test.dart: Editing and history integrity editing keeps option ids and history; changing the answer can reset the schedule
+00:02 +20: /home/runner/work/quizzme/quizzme/test/data/database_test.dart: Editing and history integrity moving and duplicating questions
+00:02 +21: /home/runner/work/quizzme/quizzme/test/data/database_test.dart: Editing and history integrity deleting a question removes it everywhere
+00:02 +22: /home/runner/work/quizzme/quizzme/test/data/database_test.dart: Editing and history integrity search and combined filters
+00:02 +23: /home/runner/work/quizzme/quizzme/test/data/database_test.dart: Excel import import, re-import duplicates (skip/update) and history preservation
+00:02 +24: /home/runner/work/quizzme/quizzme/test/data/database_test.dart: Excel import questions stay after the original file is gone
+00:02 +25: /home/runner/work/quizzme/quizzme/test/data/database_test.dart: Excel import an import interrupted by closing the app is marked interrupted
+00:02 +26: /home/runner/work/quizzme/quizzme/test/data/database_test.dart: Excel import a large file imports in one go
+00:04 +27: /home/runner/work/quizzme/quizzme/test/data/database_test.dart: Excel import export then import reproduces the bank
+00:04 +28: /home/runner/work/quizzme/quizzme/test/data/database_test.dart: Backup and restore a backup restores everything, including history and settings
+00:04 +29: /home/runner/work/quizzme/quizzme/test/data/database_test.dart: Backup and restore invalid backups are rejected and existing data is untouched
+00:04 +30: /home/runner/work/quizzme/quizzme/test/data/database_test.dart: Settings settings persist and unknown values fall back to defaults
+00:04 +31: /home/runner/work/quizzme/quizzme/test/data/database_test.dart: Dashboard dashboard, streaks, goals and achievements are computed from history
+00:04 +32: /home/runner/work/quizzme/quizzme/test/screens/screenshot_test.dart: desktop screens render without overflow (dark)
+00:05 +33: /home/runner/work/quizzme/quizzme/test/screens/screenshot_test.dart: desktop screens render without overflow (dark)
+00:05 +34: /home/runner/work/quizzme/quizzme/test/screens/screenshot_test.dart: desktop screens render without overflow (dark)
+00:05 +35: /home/runner/work/quizzme/quizzme/test/screens/screenshot_test.dart: desktop screens render without overflow (dark)
+00:05 +36: /home/runner/work/quizzme/quizzme/test/screens/screenshot_test.dart: desktop screens render without overflow (dark)
+00:05 +37: /home/runner/work/quizzme/quizzme/test/screens/screenshot_test.dart: desktop screens render without overflow (dark)
+00:05 +38: /home/runner/work/quizzme/quizzme/test/screens/screenshot_test.dart: desktop screens render without overflow (dark)
+00:05 +39: /home/runner/work/quizzme/quizzme/test/screens/screenshot_test.dart: desktop screens render without overflow (dark)
+00:05 +40: /home/runner/work/quizzme/quizzme/test/screens/screenshot_test.dart: desktop screens render without overflow (dark)
+00:05 +41: /home/runner/work/quizzme/quizzme/test/screens/screenshot_test.dart: desktop screens render without overflow (dark)
+00:05 +42: /home/runner/work/quizzme/quizzme/test/screens/screenshot_test.dart: desktop screens render without overflow (dark)
+00:05 +43: /home/runner/work/quizzme/quizzme/test/screens/screenshot_test.dart: desktop screens render without overflow (dark)
+00:05 +44: /home/runner/work/quizzme/quizzme/test/screens/screenshot_test.dart: desktop screens render without overflow (dark)
+00:05 +45: /home/runner/work/quizzme/quizzme/test/screens/screenshot_test.dart: desktop screens render without overflow (dark)
+00:05 +46: /home/runner/work/quizzme/quizzme/test/screens/screenshot_test.dart: desktop screens render without overflow (dark)
+00:05 +47: /home/runner/work/quizzme/quizzme/test/screens/screenshot_test.dart: desktop screens render without overflow (dark)
+00:05 +48: /home/runner/work/quizzme/quizzme/test/screens/screenshot_test.dart: desktop screens render without overflow (dark)
+00:05 +49: /home/runner/work/quizzme/quizzme/test/screens/screenshot_test.dart: desktop screens render without overflow (dark)
+00:06 +50: /home/runner/work/quizzme/quizzme/test/screens/screenshot_test.dart: desktop screens render without overflow (dark)
+00:06 +51: /home/runner/work/quizzme/quizzme/test/screens/screenshot_test.dart: desktop screens render without overflow (dark)
+00:06 +52: /home/runner/work/quizzme/quizzme/test/screens/screenshot_test.dart: desktop screens render without overflow (dark)
+00:06 +53: /home/runner/work/quizzme/quizzme/test/screens/screenshot_test.dart: desktop screens render without overflow (dark)
+00:06 +54: /home/runner/work/quizzme/quizzme/test/screens/screenshot_test.dart: desktop screens render without overflow (dark)
+00:06 +55: /home/runner/work/quizzme/quizzme/test/screens/screenshot_test.dart: desktop screens render without overflow (dark)
+00:06 +56: /home/runner/work/quizzme/quizzme/test/screens/screenshot_test.dart: desktop screens render without overflow (dark)
+00:06 +57: /home/runner/work/quizzme/quizzme/test/screens/screenshot_test.dart: desktop screens render without overflow (dark)
+00:06 +58: /home/runner/work/quizzme/quizzme/test/screens/screenshot_test.dart: desktop screens render without overflow (dark)
+00:06 +59: /home/runner/work/quizzme/quizzme/test/screens/screenshot_test.dart: desktop screens render without overflow (dark)
+00:06 +60: /home/runner/work/quizzme/quizzme/test/screens/screenshot_test.dart: desktop screens render without overflow (dark)
+00:06 +61: /home/runner/work/quizzme/quizzme/test/screens/screenshot_test.dart: desktop screens render without overflow (dark)
+00:06 +62: /home/runner/work/quizzme/quizzme/test/screens/screenshot_test.dart: desktop screens render without overflow (dark)
+00:06 +63: /home/runner/work/quizzme/quizzme/test/screens/screenshot_test.dart: desktop screens render without overflow (dark)
+00:06 +64: /home/runner/work/quizzme/quizzme/test/screens/screenshot_test.dart: desktop screens render without overflow (dark)
+00:06 +65: /home/runner/work/quizzme/quizzme/test/screens/screenshot_test.dart: desktop screens render without overflow (dark)
+00:06 +66: /home/runner/work/quizzme/quizzme/test/screens/screenshot_test.dart: desktop screens render without overflow (dark)
+00:06 +67: /home/runner/work/quizzme/quizzme/test/screens/screenshot_test.dart: desktop screens render without overflow (dark)
+00:07 +68: /home/runner/work/quizzme/quizzme/test/screens/screenshot_test.dart: desktop screens render without overflow (dark)
+00:07 +69: /home/runner/work/quizzme/quizzme/test/screens/screenshot_test.dart: desktop screens render without overflow (dark)
+00:07 +70: /home/runner/work/quizzme/quizzme/test/screens/screenshot_test.dart: desktop screens render without overflow (dark)
+00:07 +71: /home/runner/work/quizzme/quizzme/test/screens/screenshot_test.dart: desktop screens render without overflow (dark)
+00:07 +72: /home/runner/work/quizzme/quizzme/test/screens/screenshot_test.dart: desktop screens render without overflow (dark)
+00:07 +73: /home/runner/work/quizzme/quizzme/test/screens/screenshot_test.dart: desktop screens render without overflow (dark)
+00:07 +74: /home/runner/work/quizzme/quizzme/test/screens/screenshot_test.dart: desktop screens render without overflow (dark)
+00:07 +75: /home/runner/work/quizzme/quizzme/test/screens/screenshot_test.dart: desktop screens render without overflow (dark)
+00:07 +76: /home/runner/work/quizzme/quizzme/test/screens/screenshot_test.dart: desktop screens render without overflow (dark)
+00:07 +77: /home/runner/work/quizzme/quizzme/test/screens/screenshot_test.dart: desktop screens render without overflow (dark)
+00:07 +78: /home/runner/work/quizzme/quizzme/test/screens/screenshot_test.dart: desktop screens render without overflow (dark)
+00:07 +79: /home/runner/work/quizzme/quizzme/test/screens/screenshot_test.dart: desktop screens render without overflow (dark)
+00:07 +80: /home/runner/work/quizzme/quizzme/test/screens/screenshot_test.dart: desktop screens render without overflow (dark)
+00:07 +81: /home/runner/work/quizzme/quizzme/test/screens/screenshot_test.dart: desktop screens render without overflow (dark)
+00:07 +82: /home/runner/work/quizzme/quizzme/test/screens/screenshot_test.dart: desktop screens render without overflow (dark)
+00:07 +83: /home/runner/work/quizzme/quizzme/test/screens/screenshot_test.dart: desktop screens render without overflow (dark)
+00:07 +84: /home/runner/work/quizzme/quizzme/test/screens/screenshot_test.dart: desktop screens render without overflow (dark)
+00:07 +85: /home/runner/work/quizzme/quizzme/test/screens/screenshot_test.dart: desktop screens render without overflow (dark)
+00:07 +86: /home/runner/work/quizzme/quizzme/test/screens/screenshot_test.dart: desktop screens render without overflow (dark)
+00:10 +87: /home/runner/work/quizzme/quizzme/test/screens/screenshot_test.dart: desktop screens render without overflow (minimal)
+00:14 +88: /home/runner/work/quizzme/quizzme/test/screens/screenshot_test.dart: desktop screens render without overflow (glass_blue)
+00:18 +89: /home/runner/work/quizzme/quizzme/test/screens/screenshot_test.dart: phone home renders without overflow
+00:20 +90: All tests passed!
