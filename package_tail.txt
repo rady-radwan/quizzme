@@ -1,0 +1,193 @@
++ REL=build/windows/x64/runner/Release
++ for d in msvcp140.dll vcruntime140.dll vcruntime140_1.dll
++ cp /c/Windows/System32/msvcp140.dll build/windows/x64/runner/Release/
++ for d in msvcp140.dll vcruntime140.dll vcruntime140_1.dll
++ cp /c/Windows/System32/vcruntime140.dll build/windows/x64/runner/Release/
++ for d in msvcp140.dll vcruntime140.dll vcruntime140_1.dll
++ cp /c/Windows/System32/vcruntime140_1.dll build/windows/x64/runner/Release/
+++ grep -E '^version:' pubspec.yaml
+++ sed -E 's/version: *([0-9.]+).*/\1/'
++ VERSION=1.0.0
++ OUT='D:\a\_temp/out'
++ cp -r build/windows/x64/runner/Release 'D:\a\_temp/out/Quiz me'
++ cd 'D:\a\_temp/out'
++ 7z a -tzip -mx=9 QuizMe-Windows-portable.zip 'Quiz me'
++ rm -rf 'D:\a\_temp/out/Quiz me'
++ ISCC=
++ for c in "/c/Program Files (x86)/Inno Setup 6/ISCC.exe" "/c/Program Files/Inno Setup 6/ISCC.exe"
++ '[' -f '/c/Program Files (x86)/Inno Setup 6/ISCC.exe' ']'
++ ISCC='/c/Program Files (x86)/Inno Setup 6/ISCC.exe'
++ for c in "/c/Program Files (x86)/Inno Setup 6/ISCC.exe" "/c/Program Files/Inno Setup 6/ISCC.exe"
++ '[' -f '/c/Program Files/Inno Setup 6/ISCC.exe' ']'
++ '[' -z '/c/Program Files (x86)/Inno Setup 6/ISCC.exe' ']'
++ echo 'ISCC=/c/Program Files (x86)/Inno Setup 6/ISCC.exe'
+ISCC=/c/Program Files (x86)/Inno Setup 6/ISCC.exe
+++ cygpath -w /d/a/quizzme/quizzme/build/windows/x64/runner/Release
++ SRC='D:\a\quizzme\quizzme\build\windows\x64\runner\Release'
+++ cygpath -w 'D:\a\_temp/out'
++ OUTW='D:\a\_temp\out'
++ MSYS2_ARG_CONV_EXCL='*'
++ '/c/Program Files (x86)/Inno Setup 6/ISCC.exe' /DAppVersion=1.0.0 '/DSourceDir=D:\a\quizzme\quizzme\build\windows\x64\runner\Release' '/OD:\a\_temp\out' 'tool\windows\installer.iss'
+Inno Setup 6 Command-Line Compiler
+Copyright (C) 1997-2026 Jordan Russell. All rights reserved.
+Portions Copyright (C) 2000-2026 Martijn Laan. All rights reserved.
+Portions Copyright (C) 2001-2004 Alex Yackimoff. All rights reserved.
+https://www.innosetup.com
+
+Compiler engine version: Inno Setup 6.7.1
+Non-commercial use only
+
+Preprocessing
+   Reading file: C:\Program Files (x86)\Inno Setup 6\ISPPBuiltins.iss
+Parsing [Setup] section, line 14
+Parsing [Setup] section, line 15
+Parsing [Setup] section, line 16
+Parsing [Setup] section, line 17
+Parsing [Setup] section, line 18
+Parsing [Setup] section, line 19
+Parsing [Setup] section, line 20
+Parsing [Setup] section, line 21
+Parsing [Setup] section, line 22
+Parsing [Setup] section, line 23
+Parsing [Setup] section, line 24
+Parsing [Setup] section, line 25
+Parsing [Setup] section, line 26
+Parsing [Setup] section, line 27
+Parsing [Setup] section, line 28
+Parsing [Setup] section, line 29
+Parsing [Setup] section, line 30
+Parsing [Setup] section, line 31
+Parsing [Setup] section, line 32
+Parsing [Setup] section, line 33
+Parsing [Setup] section, line 34
+Parsing [Setup] section, line 35
+Reading file (WizardImageFile)
+Reading file (WizardSmallImageFile)
+Preparing Setup program executable
+   Verification successful
+   Updating icons (Setup.e32)
+   Updating version info (Setup.e32)
+Determining language code pages
+   Reading file: C:\Program Files (x86)\Inno Setup 6\Default.isl
+   Messages in script file
+Reading default messages from Default.isl
+Parsing [LangOptions], [Messages], and [CustomMessages] sections
+   Reading file: C:\Program Files (x86)\Inno Setup 6\Default.isl
+   Messages in script file
+Reading [Code] section
+Parsing [Tasks] section, line 38
+Parsing [Icons] section, line 44
+Parsing [Icons] section, line 45
+Parsing [Run] section, line 48
+Parsing [Files] section, line 41
+Creating setup files
+   Verification successful
+   Updating icons (Setup.exe)
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\audioplayers_windows_plugin.dll
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\dartjni.dll
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\flutter_local_notifications_windows.dll
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\flutter_tts_plugin.dll
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\flutter_windows.dll
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\msvcp140.dll
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\QuizMe.exe
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\sqlite3.dll
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\vcruntime140.dll
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\vcruntime140_1.dll
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\app.so
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\icudtl.dat
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\AssetManifest.bin
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\FontManifest.json
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\NativeAssetsManifest.json
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\NOTICES.Z
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\branding\emblem.png
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\branding\logo.png
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\fonts\AtkinsonHyperlegible\AtkinsonHyperlegible_400Regular.ttf
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\fonts\AtkinsonHyperlegible\AtkinsonHyperlegible_700Bold.ttf
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\fonts\Cairo\Cairo_400Regular.ttf
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\fonts\Cairo\Cairo_600SemiBold.ttf
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\fonts\Cairo\Cairo_700Bold.ttf
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\fonts\DMSans\DMSans_400Regular.ttf
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\fonts\DMSans\DMSans_600SemiBold.ttf
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\fonts\DMSans\DMSans_700Bold.ttf
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\fonts\Inter\Inter_400Regular.ttf
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\fonts\Inter\Inter_600SemiBold.ttf
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\fonts\Inter\Inter_700Bold.ttf
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\fonts\JetBrainsMono\JetBrainsMono_400Regular.ttf
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\fonts\JetBrainsMono\JetBrainsMono_600SemiBold.ttf
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\fonts\JetBrainsMono\JetBrainsMono_700Bold.ttf
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\fonts\Lato\Lato_400Regular.ttf
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\fonts\Lato\Lato_700Bold.ttf
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\fonts\Lexend\Lexend_400Regular.ttf
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\fonts\Lexend\Lexend_600SemiBold.ttf
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\fonts\Lexend\Lexend_700Bold.ttf
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\fonts\Lora\Lora_400Regular.ttf
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\fonts\Lora\Lora_600SemiBold.ttf
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\fonts\Lora\Lora_700Bold.ttf
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\fonts\Merriweather\Merriweather_400Regular.ttf
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\fonts\Merriweather\Merriweather_700Bold.ttf
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\fonts\Montserrat\Montserrat_400Regular.ttf
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\fonts\Montserrat\Montserrat_600SemiBold.ttf
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\fonts\Montserrat\Montserrat_700Bold.ttf
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\fonts\NotoKufiArabic\NotoKufiArabic_400Regular.ttf
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\fonts\NotoKufiArabic\NotoKufiArabic_600SemiBold.ttf
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\fonts\NotoKufiArabic\NotoKufiArabic_700Bold.ttf
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\fonts\Nunito\Nunito_400Regular.ttf
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\fonts\Nunito\Nunito_600SemiBold.ttf
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\fonts\Nunito\Nunito_700Bold.ttf
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\fonts\OpenSans\OpenSans_400Regular.ttf
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\fonts\OpenSans\OpenSans_600SemiBold.ttf
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\fonts\OpenSans\OpenSans_700Bold.ttf
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\fonts\PlayfairDisplay\PlayfairDisplay_400Regular.ttf
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\fonts\PlayfairDisplay\PlayfairDisplay_600SemiBold.ttf
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\fonts\PlayfairDisplay\PlayfairDisplay_700Bold.ttf
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\fonts\Poppins\Poppins_400Regular.ttf
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\fonts\Poppins\Poppins_600SemiBold.ttf
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\fonts\Poppins\Poppins_700Bold.ttf
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\fonts\Roboto\Roboto_400Regular.ttf
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\fonts\Roboto\Roboto_600SemiBold.ttf
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\fonts\Roboto\Roboto_700Bold.ttf
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\fonts\SourceSans3\SourceSans3_400Regular.ttf
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\fonts\SourceSans3\SourceSans3_600SemiBold.ttf
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\fonts\SourceSans3\SourceSans3_700Bold.ttf
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\fonts\Tajawal\Tajawal_400Regular.ttf
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\fonts\Tajawal\Tajawal_500Medium.ttf
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\fonts\Tajawal\Tajawal_700Bold.ttf
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\font_licenses\AtkinsonHyperlegible.txt
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\font_licenses\Cairo.txt
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\font_licenses\DMSans.txt
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\font_licenses\Inter.txt
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\font_licenses\JetBrainsMono.txt
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\font_licenses\Lato.txt
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\font_licenses\Lexend.txt
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\font_licenses\Lora.txt
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\font_licenses\Merriweather.txt
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\font_licenses\Montserrat.txt
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\font_licenses\NotoKufiArabic.txt
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\font_licenses\Nunito.txt
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\font_licenses\OpenSans.txt
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\font_licenses\PlayfairDisplay.txt
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\font_licenses\Poppins.txt
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\font_licenses\Roboto.txt
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\font_licenses\SourceSans3.txt
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\font_licenses\Tajawal.txt
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\templates\QuizMe_Advanced_Template.xlsx
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\templates\QuizMe_Examples.xlsx
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\assets\templates\QuizMe_Simple_Template.xlsx
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\fonts\MaterialIcons-Regular.otf
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\shaders\ink_sparkle.frag
+   Compressing: D:\a\quizzme\quizzme\build\windows\x64\runner\Release\data\flutter_assets\shaders\stretch_effect.frag
+   Compressing Setup program executable
+   Updating version info (Setup.exe)
+   Updating manifest (Setup.exe)
+
+
+Successful compile (7.360 sec). Resulting Setup program filename is:
+D:\a\_temp\out\QuizMe-Setup.exe
++ ls -la 'D:\a\_temp/out'
+total 35681
+drwxr-xr-x 1 runneradmin 197121        0 Nov 24 22:17 .
+drwxr-xr-x 1 runneradmin 197121        0 Nov 24 22:17 ..
+-rwxr-xr-x 1 runneradmin 197121 16481046 Nov 24 22:17 QuizMe-Setup.exe
+-rw-r--r-- 1 runneradmin 197121 20045919 Nov 24 22:17 QuizMe-Windows-portable.zip
+-rw-r--r-- 1 runneradmin 197121      127 Nov 24 22:17 windows-build.txt
++ test -f 'D:\a\_temp/out/QuizMe-Setup.exe'
